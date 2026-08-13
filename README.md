@@ -23,6 +23,7 @@ requests). Lab 1 builds a minimal full-stack vertical slice: **React UI → Expr
 ```
 toktickit/
 ├── client/          # React + Vite + Bootstrap frontend
+│   └── tests/lab-01/
 ├── server/          # Express + TypeScript API
 │   ├── prisma/      # schema.prisma, seed.ts
 │   ├── src/

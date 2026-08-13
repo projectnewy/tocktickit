@@ -6,8 +6,9 @@
     "esModuleInterop": true,
     "strict": true,
     "outDir": "dist",
+    "rootDir": "src",
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["src", "prisma", "tests"]
+  "include": ["src"]
 }
