@@ -14,6 +14,7 @@
 | 6 | Write README setup instructions per Issue 1's acceptance criteria, create GitHub Issues 1–4 and the required Project board, and open the PR for Issue 1. | Documented prerequisites, Docker PostgreSQL setup, client/server install and run steps, testing commands, and environment-variable handling. Installed and authenticated the `gh` CLI, created the Issues, configured the Project's Status options, and opened PR #5. |
 | 7 | After PR #5 was approved and merged, act on reviewer `phittayanan`'s feedback and implement Issue 2. | Fixed the `server/tsconfig.json` `rootDir` bug that broke `npm run build && npm start`, implemented `GET /api/health`, wired the client's `checkSystem()`/`App.tsx` to display Online/Offline from the real API, and re-ran both test suites. |
 | 8 | Implement Issue 3: add the Prisma Category model, run the migration, and write an idempotent seed. | Added the model exactly as specified in the labsheet, ran `prisma migrate dev --name init`, implemented the seed with `prisma.category.upsert`, and verified idempotency by running it twice and confirming the row count stayed at 4. |
+| 9 | After PR #6 and PR #7 merged, implement Issue 4: GET /api/categories and wire the client to display the seeded categories. | Added the route, replaced the `describe.todo`/`it.todo` stubs with real Supertest/Vitest tests (using `vi.spyOn` on the api module for the success/error UI cases), extended `checkSystem()` to fetch categories, and verified the full stack live with `curl` against the running server. |
 
 ## Reflection
 
