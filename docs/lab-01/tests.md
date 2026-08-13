@@ -18,4 +18,15 @@ All test files live under `server/tests/lab-01/` and `client/tests/lab-01/`.
 - `cd client && npm test` runs via Vitest. The heading test (UI-01) **passes**. The two
   Issue-4 UI tests are `it.todo` (skipped) as provided by the scaffold.
 
-This table will be updated with final passing terminal output as each Issue (2, 3, 4) is completed.
+## Issue 3 status (category seed)
+
+- `server/prisma/schema.prisma` has the `Category` model (id, unique name, createdAt); migration
+  `20260813164813_init` creates the table.
+- `npx tsx prisma/seed.ts` run twice against a fresh database: both runs printed
+  `Seeded 4 categories.`, and `SELECT id, name FROM "Category" ORDER BY id` afterward showed exactly 4
+  rows (1 Account and Access, 2 Hardware, 3 Software, 4 Network) — no duplicates, confirming the
+  `upsert`-based seed is idempotent.
+- No automated test is required for Issue 3 itself (API-02 in the table above belongs to Issue 4, once
+  `GET /api/categories` exists to read this seeded data back).
+
+This table will be updated with final passing terminal output as each remaining Issue (4) is completed.
