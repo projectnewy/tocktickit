@@ -1,62 +1,51 @@
-import { useState } from "react";
-import { checkSystem, Category } from "./api.js";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { RequesterProvider } from "./context/RequesterContext.js";
+import { RequesterGuard } from "./components/layout/RequesterGuard.js";
+import { AppShell } from "./components/layout/AppShell.js";
+import RequesterSelection from "./pages/RequesterSelection.js";
+import SystemCheck from "./pages/SystemCheck.js";
+import NotFound from "./pages/NotFound.js";
 
-// UI states you must handle for Issue 4: idle, loading, success, error.
-type UiState = "idle" | "loading" | "success" | "error";
-
+// My Tickets, Create Ticket, and Ticket Detail placeholders are replaced by
+// their real screens in Issues 11–13.
 export default function App() {
-  const [state, setState] = useState<UiState>("idle");
-  const [categories, setCategories] = useState<Category[]>([]);
-
-  async function handleCheck() {
-    setState("loading");
-    try {
-      const result = await checkSystem();
-      setCategories(result.categories);
-      setState("success");
-    } catch {
-      setState("error");
-    }
-  }
-
   return (
-    <div className="container py-5" style={{ maxWidth: 640 }}>
-      <h1 className="h3 mb-4">
-        TokTickIT <span className="text-success">IT Service Desk</span>
-      </h1>
-
-      <button className="btn btn-success" onClick={handleCheck} disabled={state === "loading"}>
-        {state === "loading" ? "⏳ Loading…" : "Check System"}
-      </button>
-
-      {state === "success" && (
-        <div className="mt-4">
-          <p className="mb-2">
-            <strong>System Status:</strong> <span className="text-success">Online</span>
-          </p>
-          {categories.length > 0 && (
-            <>
-              <p className="mb-1">
-                <strong>Supported Request Categories:</strong>
-              </p>
-              <ul>
-                {categories.map((category) => (
-                  <li key={category.id}>{category.name}</li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
-      )}
-
-      {state === "error" && (
-        <div className="mt-4">
-          <p className="mb-1">
-            <strong>System Status:</strong> <span className="text-danger">Offline</span>
-          </p>
-          <p className="text-danger mb-0">Unable to connect to TokTickIT API</p>
-        </div>
-      )}
-    </div>
+    <BrowserRouter>
+      <RequesterProvider>
+        <Routes>
+          <Route path="/" element={<Navigate to="/tickets" replace />} />
+          <Route path="/select-requester" element={<RequesterSelection />} />
+          <Route
+            path="/tickets"
+            element={
+              <RequesterGuard>
+                <AppShell>
+                  <p className="text-secondary">My Tickets — coming in Issue 11.</p>
+                </AppShell>
+              </RequesterGuard>
+            }
+          />
+          <Route
+            path="/tickets/new"
+            element={
+              <RequesterGuard>
+                <AppShell>
+                  <p className="text-secondary">Create Ticket — coming in Issue 10.</p>
+                </AppShell>
+              </RequesterGuard>
+            }
+          />
+          <Route
+            path="/system"
+            element={
+              <AppShell>
+                <SystemCheck />
+              </AppShell>
+            }
+          />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </RequesterProvider>
+    </BrowserRouter>
   );
 }
