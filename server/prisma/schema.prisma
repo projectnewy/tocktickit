@@ -10,8 +10,106 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Declaration order is load-bearing: Postgres enums sort by declaration order,
+// so `orderBy: { requestedPriority: "desc" }` returns the most urgent first.
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// Lab 2 only ever produces NEW. The rest exist so Lab 3 needs no enum migration.
+enum TicketStatus {
+  NEW
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  CANCELLED
+}
+
 model Category {
   id        Int      @id @default(autoincrement())
   name      String   @unique
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+  tickets   Ticket[]
+}
+
+model RelatedSystem {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  tickets     Ticket[]
+}
+
+model RequesterUser {
+  id         Int      @id @default(autoincrement())
+  fullName   String
+  email      String   @unique // Lab 3: becomes the login identity
+  department String?
+  isActive   Boolean  @default(true) // inactive => hidden from selector, rejected as context
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tickets             Ticket[]
+  uploadedAttachments Attachment[] @relation("AttachmentUploader")
+  removedAttachments  Attachment[] @relation("AttachmentRemover")
+}
+
+model Ticket {
+  id                Int          @id @default(autoincrement())
+  ticketNumber      String       @unique // TKT-2026-000042
+  summary           String       @db.VarChar(150)
+  description       String       @db.Text
+  requestedPriority Priority
+  itPriority        Priority? // nullable: figure shows it, IT Staff workflow is Lab 3
+  status            TicketStatus @default(NEW)
+
+  requesterId     Int
+  categoryId      Int
+  relatedSystemId Int
+
+  createdAt DateTime @default(now()) // serialized to the client as `ticketDate`
+  updatedAt DateTime @updatedAt
+
+  requester     RequesterUser @relation(fields: [requesterId], references: [id], onDelete: Restrict)
+  category      Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  relatedSystem RelatedSystem @relation(fields: [relatedSystemId], references: [id], onDelete: Restrict)
+  attachments   Attachment[]
+
+  @@index([requesterId, createdAt(sort: Desc)])
+  @@index([requesterId, status, createdAt(sort: Desc)])
+  @@index([requesterId, categoryId])
+  @@index([requesterId, relatedSystemId])
+}
+
+model Attachment {
+  id               Int      @id @default(autoincrement())
+  ticketId         Int
+  originalFilename String // display only, never touches the filesystem
+  storedFilename   String   @unique // "<uuid>.<ext>"
+  mimeType         String
+  sizeBytes        Int
+  uploadedById     Int
+  uploadedAt       DateTime @default(now())
+
+  removedAt     DateTime? // SOFT REMOVAL: null => active
+  removedReason String?   @db.VarChar(200)
+  removedById   Int?
+
+  ticket     Ticket         @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  uploadedBy RequesterUser  @relation("AttachmentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  removedBy  RequesterUser? @relation("AttachmentRemover", fields: [removedById], references: [id], onDelete: Restrict)
+
+  @@index([ticketId, removedAt])
+}
+
+// Backs ticket-number generation — see server/src/services/ticketNumber.ts.
+model TicketCounter {
+  year       Int @id
+  lastNumber Int @default(0)
 }

@@ -1,9 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
+import { resetDb } from "../helpers/db.js";
 
-// Requires the DB to be migrated and seeded first (see server/prisma/seed.ts).
 describe("GET /api/categories", () => {
+  beforeEach(resetDb);
+
   it("returns the four seeded categories in id order", async () => {
     const res = await request(app).get("/api/categories");
     expect(res.status).toBe(200);
