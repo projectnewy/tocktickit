@@ -1,24 +1,9 @@
 import { getPrisma } from "../src/prisma.js";
+import { seedReference } from "../src/db/seedData.js";
 
-// Issue 3 — seed the four supported categories.
-// The four names are: Account and Access, Hardware, Software, Network.
-// Requirement: running the seed twice must NOT create duplicates.
-// Hint: prisma.category.upsert({ where:{name}, update:{}, create:{name} }).
-const CATEGORY_NAMES = ["Account and Access", "Hardware", "Software", "Network"];
-
-async function main() {
-  const prisma = getPrisma();
-  for (const name of CATEGORY_NAMES) {
-    await prisma.category.upsert({
-      where: { name },
-      update: {},
-      create: { name },
-    });
-  }
-  console.log(`Seeded ${CATEGORY_NAMES.length} categories.`);
-}
-
-main()
+// Thin CLI wrapper — the actual seed data and logic live in src/db/seedData.ts
+// so they're typechecked by `npm run build` and importable from tests.
+seedReference(getPrisma())
   .catch((e) => {
     console.error(e);
     process.exit(1);
