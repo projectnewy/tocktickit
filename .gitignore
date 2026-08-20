@@ -3,12 +3,21 @@ node_modules/
 # env & secrets
 .env
 *.env
+.env.test
 !.env.example
+!.env.test.example
 # build output
 dist/
 build/
 # prisma
 server/prisma/*.db
+# uploaded attachments (runtime data, never committed)
+server/uploads/*
+!server/uploads/.gitkeep
+# playwright (screenshots under artifacts/lab-02/ ARE committed - see below)
+client/playwright-report/
+client/test-results/
+e2e/lab-02/.output/
 # logs & OS
 *.log
 .DS_Store

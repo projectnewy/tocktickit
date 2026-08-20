@@ -1,0 +1,126 @@
+/* Zen Green theme — see docs/lab-02/ui-spec.md for the full specification.
+   Imported in main.tsx AFTER bootstrap.min.css so these overrides win at
+   equal specificity. */
+
+:root {
+  --tk-green-primary: #006b3c;
+  --tk-green-secondary: #0b7a46;
+  --tk-green-pale: #eaf6ef;
+  --tk-page-bg: #f5f7f6;
+  --tk-surface: #ffffff;
+  --tk-border: #dde5e0;
+  --tk-text: #1c2b24;
+  --tk-field-readonly-bg: #f2f6f3;
+  --tk-error: #a4161a;
+  --tk-warning: #b26b00;
+  --tk-shadow: 0 1px 2px rgba(16, 40, 28, 0.06), 0 2px 8px rgba(16, 40, 28, 0.05);
+}
+
+body {
+  background-color: var(--tk-page-bg);
+  color: var(--tk-text);
+}
+
+/* Bootstrap CSS-variable overrides. Note: overriding --bs-primary alone does
+   NOT recolor .btn-primary — Bootstrap 5.3 sets --bs-btn-* as literals
+   inside that rule, so those are overridden explicitly below too. */
+:root {
+  --bs-primary: var(--tk-green-primary);
+  --bs-primary-rgb: 0, 107, 60;
+  --bs-body-bg: var(--tk-page-bg);
+  --bs-body-color: var(--tk-text);
+  --bs-link-color: var(--tk-green-secondary);
+  --bs-link-hover-color: var(--tk-green-primary);
+  --bs-border-color: var(--tk-border);
+  --bs-focus-ring-color: rgba(11, 122, 70, 0.35);
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--tk-green-primary);
+  --bs-btn-border-color: var(--tk-green-primary);
+  --bs-btn-hover-bg: var(--tk-green-secondary);
+  --bs-btn-hover-border-color: var(--tk-green-secondary);
+  --bs-btn-active-bg: var(--tk-green-secondary);
+  --bs-btn-active-border-color: var(--tk-green-secondary);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--tk-green-primary);
+  --bs-btn-border-color: var(--tk-green-primary);
+  --bs-btn-hover-bg: var(--tk-green-primary);
+  --bs-btn-hover-border-color: var(--tk-green-primary);
+}
+
+.form-check-input:checked {
+  background-color: var(--tk-green-primary);
+  border-color: var(--tk-green-primary);
+}
+
+.page-item.active .page-link {
+  background-color: var(--tk-green-primary);
+  border-color: var(--tk-green-primary);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--tk-green-secondary);
+  box-shadow: 0 0 0 0.25rem var(--bs-focus-ring-color);
+}
+
+/* App shell */
+.tk-app-header {
+  background-color: var(--tk-green-primary);
+}
+
+.tk-nav-link {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+}
+
+.tk-nav-link:hover {
+  color: #ffffff;
+}
+
+.tk-nav-link.active {
+  color: #ffffff;
+  border-bottom-color: #ffffff;
+}
+
+/* Surfaces and fields */
+.tk-page {
+  min-height: 100vh;
+  background-color: var(--tk-page-bg);
+}
+
+.tk-surface {
+  background-color: var(--tk-surface);
+  border: 1px solid var(--tk-border);
+  border-radius: 0.5rem;
+  box-shadow: var(--tk-shadow);
+}
+
+.tk-field-readonly {
+  background-color: var(--tk-field-readonly-bg) !important;
+}
+
+.tk-field-error {
+  color: var(--tk-error);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.tk-help {
+  color: var(--bs-secondary-color, #6c757d);
+  font-size: 0.875rem;
+}
+
+/* Touch targets on mobile */
+@media (max-width: 767.98px) {
+  .btn,
+  .form-control,
+  .form-select {
+    min-height: 44px;
+  }
+}
