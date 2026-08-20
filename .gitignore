@@ -14,6 +14,10 @@ server/prisma/*.db
 # uploaded attachments (runtime data, never committed)
 server/uploads/*
 !server/uploads/.gitkeep
+# playwright (screenshots under artifacts/lab-02/ ARE committed - see below)
+client/playwright-report/
+client/test-results/
+e2e/lab-02/.output/
 # logs & OS
 *.log
 .DS_Store
