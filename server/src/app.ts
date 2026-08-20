@@ -1,33 +1,29 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import cors from "cors";
-import { getPrisma } from "./prisma.js";
+import { env } from "./env.js";
+import apiRouter from "./routes/index.js";
+import { notFound } from "./http/notFound.js";
+import { errorHandler } from "./http/errorHandler.js";
 
 // The Express app is exported separately from app.listen() (see index.ts) so
 // Supertest can import `app` without opening a port. Do not merge these files.
 export const app = express();
 
-app.use(cors());          // already wired: lets the Vite dev server call this API
+// A custom X-Requester-Id header (see http/requesterContext.ts) triggers a
+// CORS preflight on every POST, so the allowed headers are explicit rather
+// than relying on cors()'s permissive default.
+app.use(
+  cors({
+    origin: env.clientOrigin,
+    allowedHeaders: ["Content-Type", "X-Requester-Id"],
+    exposedHeaders: ["Content-Disposition"],
+  })
+);
 app.use(express.json());
 
-// ---------------------------------------------------------------------------
-// Issue 2 — API health check
-// Make the test in tests/lab-01/health.test.ts pass.
-// It must return HTTP 200 with JSON: { status: "ok", service: "TokTickIT API" }
-// ---------------------------------------------------------------------------
-app.get("/api/health", (_req: Request, res: Response) => {
-  res.status(200).json({ status: "ok", service: "TokTickIT API" });
-});
+app.use("/api", apiRouter);
+app.use("/api", notFound);
 
-app.get("/api/categories", async (_req: Request, res: Response) => {
-  try {
-    const categories = await getPrisma().category.findMany({
-      select: { id: true, name: true },
-      orderBy: { id: "asc" },
-    });
-    res.status(200).json(categories);
-  } catch {
-    res.status(500).json({ error: "Unable to load categories" });
-  }
-});
+app.use(errorHandler);
 
 export default app;
