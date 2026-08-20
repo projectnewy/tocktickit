@@ -3,11 +3,12 @@ import { RequesterProvider } from "./context/RequesterContext.js";
 import { RequesterGuard } from "./components/layout/RequesterGuard.js";
 import { AppShell } from "./components/layout/AppShell.js";
 import RequesterSelection from "./pages/RequesterSelection.js";
+import CreateTicket from "./pages/CreateTicket.js";
 import SystemCheck from "./pages/SystemCheck.js";
 import NotFound from "./pages/NotFound.js";
 
-// My Tickets, Create Ticket, and Ticket Detail placeholders are replaced by
-// their real screens in Issues 11–13.
+// My Tickets and Ticket Detail placeholders are replaced by their real
+// screens in Issues 12–13.
 export default function App() {
   return (
     <BrowserRouter>
@@ -30,7 +31,7 @@ export default function App() {
             element={
               <RequesterGuard>
                 <AppShell>
-                  <p className="text-secondary">Create Ticket — coming in Issue 10.</p>
+                  <CreateTicket />
                 </AppShell>
               </RequesterGuard>
             }
