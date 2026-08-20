@@ -4,11 +4,11 @@ import { RequesterGuard } from "./components/layout/RequesterGuard.js";
 import { AppShell } from "./components/layout/AppShell.js";
 import RequesterSelection from "./pages/RequesterSelection.js";
 import CreateTicket from "./pages/CreateTicket.js";
+import MyTickets from "./pages/MyTickets.js";
 import SystemCheck from "./pages/SystemCheck.js";
 import NotFound from "./pages/NotFound.js";
 
-// My Tickets and Ticket Detail placeholders are replaced by their real
-// screens in Issues 12–13.
+// Ticket Detail placeholder is replaced by the real screen in Issue 13.
 export default function App() {
   return (
     <BrowserRouter>
@@ -21,7 +21,7 @@ export default function App() {
             element={
               <RequesterGuard>
                 <AppShell>
-                  <p className="text-secondary">My Tickets — coming in Issue 11.</p>
+                  <MyTickets />
                 </AppShell>
               </RequesterGuard>
             }
