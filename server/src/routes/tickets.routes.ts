@@ -4,9 +4,17 @@ import { requesterContext } from "../http/requesterContext.js";
 import { BadRequestError } from "../http/errors.js";
 import { createTicketSchema, ticketQuerySchema } from "../validation/ticket.schemas.js";
 import * as ticketService from "../services/ticket.service.js";
+import * as attachmentService from "../services/attachment.service.js";
+import { uploadAttachment } from "../upload/multerUpload.js";
 
 const router = Router();
 router.use(requesterContext);
+
+function parseTicketId(param: string): number {
+  const id = Number(param);
+  if (!Number.isInteger(id) || id <= 0) throw new BadRequestError("Invalid ticket id");
+  return id;
+}
 
 router.post(
   "/",
@@ -29,12 +37,34 @@ router.get(
 router.get(
   "/:ticketId",
   asyncHandler(async (req, res) => {
-    const ticketId = Number(req.params.ticketId);
-    if (!Number.isInteger(ticketId) || ticketId <= 0) {
-      throw new BadRequestError("Invalid ticket id");
-    }
+    const ticketId = parseTicketId(req.params.ticketId);
     const ticket = await ticketService.getTicketById(req.requesterId!, ticketId);
     res.status(200).json(ticket);
+  })
+);
+
+router.post(
+  "/:ticketId/attachments",
+  asyncHandler(async (req, res, next) => {
+    const ticketId = parseTicketId(req.params.ticketId);
+    await attachmentService.assertCanUploadToTicket(req.requesterId!, ticketId);
+    next();
+  }),
+  uploadAttachment,
+  asyncHandler(async (req, res) => {
+    const ticketId = parseTicketId(req.params.ticketId);
+    if (!req.file) throw new BadRequestError("No file uploaded");
+    const attachment = await attachmentService.finalizeUpload(req.requesterId!, ticketId, req.file);
+    res.status(201).json(attachment);
+  })
+);
+
+router.get(
+  "/:ticketId/attachments",
+  asyncHandler(async (req, res) => {
+    const ticketId = parseTicketId(req.params.ticketId);
+    const attachments = await attachmentService.listAttachmentsForTicket(req.requesterId!, ticketId);
+    res.status(200).json(attachments);
   })
 );
 
