@@ -15,6 +15,8 @@
 | 7 | Set up a dedicated test database and reset/reseed harness so API tests stop depending on the shared dev database, and retrofit the fragile Lab 1 `categories.test.ts` to use it. | Added `.env.test`, `dotenv-cli`-based scripts, `global-setup.ts` (migrate deploy once), and a `resetDb()` helper called from `beforeEach`; verified the existing `categories.test.ts` assertion is now genuinely deterministic instead of accidentally-true. |
 | 8 | Implement the ticket-number generator as its own service and verify it's correct under concurrency, since it's the single most convincing piece of evidence in this sprint. | Implemented `nextTicketNumber()` using a row-locking `INSERT ... ON CONFLICT` against a counter table inside a transaction; wrote a unit test that fires 20 concurrent calls and asserts 20 distinct numbers — it passed on the first run. |
 
+| 9 | Implement Issue 7 (server refactor): restructure `app.ts` from two inline routes into routers/services/error-handling middleware, add `/api/related-systems` and `/api/requesters`, while keeping `/api/health` and `/api/categories` byte-identical. | Built `src/http/{errors,asyncHandler,requesterContext,errorHandler,notFound}.ts`, `src/routes/{health,reference}.routes.ts`, `src/services/reference.service.ts`, `src/env.ts`; verified byte-identical Lab 1 responses via `npm run build && node dist/index.js` plus curl, and confirmed `npm start` still works (the exact class of bug flagged on Lab 1 PR #5/#6). |
+
 ## Reflection
 
 _To be completed at the end of the sprint, after all nine implementation Issues are merged, alongside a
