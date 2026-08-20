@@ -30,8 +30,11 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   const headers: Record<string, string> = {};
   if (currentRequesterId !== null) headers["X-Requester-Id"] = String(currentRequesterId);
 
-  let body: string | undefined;
-  if (options.body !== undefined) {
+  let body: BodyInit | undefined;
+  if (options.body instanceof FormData) {
+    // Leave Content-Type unset — the browser adds the multipart boundary itself.
+    body = options.body;
+  } else if (options.body !== undefined) {
     headers["Content-Type"] = "application/json";
     body = JSON.stringify(options.body);
   }
