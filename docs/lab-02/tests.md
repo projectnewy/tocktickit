@@ -114,7 +114,59 @@ cd client && npx playwright test
 
 ## 6. Final Results
 
-_To be filled in with real pasted terminal output once implementation is complete (Issues 6–14)._
+All test files pass on the final `main` branch, from the documented commands above (real pasted output,
+2026-08-20):
+
+```text
+$ cd server && npm test
+> toktickit-server@1.0.0 test
+> dotenv -e .env.test -- vitest run
+
+ ✓ tests/lab-02/my-tickets.api.test.ts (7 tests)
+ ✓ tests/lab-02/create-ticket.api.test.ts (6 tests)
+ ✓ tests/lab-02/ticket-detail.api.test.ts (4 tests)
+ ✓ tests/lab-02/reference.api.test.ts (3 tests)
+ ✓ tests/lab-02/attachments.api.test.ts (11 tests)
+ ✓ tests/lab-02/ticketNumber.unit.test.ts (4 tests)
+ ✓ tests/lab-01/health.test.ts (1 test)
+ ✓ tests/lab-01/categories.test.ts (1 test)
+
+ Test Files  8 passed (8)
+      Tests  38 passed (38)
+```
+
+```text
+$ cd client && npm test
+> toktickit-client@1.0.0 test
+> vitest run
+
+ ✓ tests/lab-01/App.test.tsx (3 tests)
+ ✓ tests/lab-02/RequesterTicketDetail.test.tsx (3 tests)
+ ✓ tests/lab-02/RequesterSelection.test.tsx (5 tests)
+ ✓ tests/lab-02/AttachmentSection.test.tsx (7 tests)
+ ✓ tests/lab-02/MyTickets.test.tsx (7 tests)
+ ✓ tests/lab-02/CreateTicket.test.tsx (7 tests)
+
+ Test Files  6 passed (6)
+      Tests  32 passed (32)
+```
+
+```text
+$ cd client && npx playwright test
+Running 6 tests using 3 workers
+
+  ok 1 [mobile]  › requester-ticket-flow.spec.ts › select requester, create a ticket, find it in My Tickets, open its detail (3.1s)
+  ok 2 [tablet]  › requester-ticket-flow.spec.ts › select requester, create a ticket, find it in My Tickets, open its detail (3.0s)
+  ok 3 [desktop] › requester-ticket-flow.spec.ts › select requester, create a ticket, find it in My Tickets, open its detail (3.1s)
+  ok 4 [tablet]  › requester-ticket-flow.spec.ts › switching requester changes the visible ticket list (AC-12) (777ms)
+  ok 5 [desktop] › requester-ticket-flow.spec.ts › switching requester changes the visible ticket list (AC-12) (803ms)
+  ok 6 [mobile]  › requester-ticket-flow.spec.ts › switching requester changes the visible ticket list (AC-12) (836ms)
+
+  6 passed (8.1s)
+```
+
+**Total: 76 tests passing** (38 API/unit + 32 UI component + 6 E2E across 3 viewports), 0 skipped, 0
+disabled.
 
 ## 7. Known Limitations or Deferred Tests
 
