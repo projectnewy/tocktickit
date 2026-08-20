@@ -5,10 +5,9 @@ import { AppShell } from "./components/layout/AppShell.js";
 import RequesterSelection from "./pages/RequesterSelection.js";
 import CreateTicket from "./pages/CreateTicket.js";
 import MyTickets from "./pages/MyTickets.js";
+import RequesterTicketDetail from "./pages/RequesterTicketDetail.js";
 import SystemCheck from "./pages/SystemCheck.js";
 import NotFound from "./pages/NotFound.js";
-
-// Ticket Detail placeholder is replaced by the real screen in Issue 13.
 export default function App() {
   return (
     <BrowserRouter>
@@ -32,6 +31,16 @@ export default function App() {
               <RequesterGuard>
                 <AppShell>
                   <CreateTicket />
+                </AppShell>
+              </RequesterGuard>
+            }
+          />
+          <Route
+            path="/tickets/:ticketId"
+            element={
+              <RequesterGuard>
+                <AppShell>
+                  <RequesterTicketDetail />
                 </AppShell>
               </RequesterGuard>
             }

@@ -61,3 +61,27 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
+
+// Attachment downloads need the X-Requester-Id header, so a plain <a href>
+// can't be used — fetch the bytes as a blob and hand them to the caller,
+// which triggers the save via an object URL.
+export async function requestBlob(path: string): Promise<Blob> {
+  const headers: Record<string, string> = {};
+  if (currentRequesterId !== null) headers["X-Requester-Id"] = String(currentRequesterId);
+
+  const res = await fetch(`${API_URL}${path}`, { headers });
+
+  if (!res.ok) {
+    let parsed: unknown;
+    try {
+      parsed = await res.json();
+    } catch {
+      parsed = undefined;
+    }
+    const message =
+      (parsed as { error?: string } | undefined)?.error ?? `Request failed with status ${res.status}`;
+    throw new ApiError(res.status, message, parsed);
+  }
+
+  return res.blob();
+}

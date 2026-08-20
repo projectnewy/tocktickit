@@ -12,3 +12,11 @@ export const ALLOWED_MIME_TYPES: readonly string[] = ALLOWED_FILE_TYPES.map((t) 
 export const ALLOWED_EXTENSIONS: readonly string[] = ALLOWED_FILE_TYPES.flatMap((t) => t.extensions);
 
 export const PRIORITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const;
+
+export const REMOVAL_REASONS = [
+  "Uploaded by mistake",
+  "Wrong file",
+  "Contains sensitive information",
+  "No longer relevant",
+  "Other",
+] as const;
