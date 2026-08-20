@@ -17,6 +17,8 @@
 
 | 9 | Implement Issue 7 (server refactor): restructure `app.ts` from two inline routes into routers/services/error-handling middleware, add `/api/related-systems` and `/api/requesters`, while keeping `/api/health` and `/api/categories` byte-identical. | Built `src/http/{errors,asyncHandler,requesterContext,errorHandler,notFound}.ts`, `src/routes/{health,reference}.routes.ts`, `src/services/reference.service.ts`, `src/env.ts`; verified byte-identical Lab 1 responses via `npm run build && node dist/index.js` plus curl, and confirmed `npm start` still works (the exact class of bug flagged on Lab 1 PR #5/#6). |
 
+| 10 | Implement Issue 8 (tickets API): create/list/detail endpoints with the ticket-number generator, ownership enforcement, and query validation from the spec. Write the API tests, including the 20-concurrent-creates test. | Built `src/validation/ticket.schemas.ts` (zod), `src/services/ticket.service.ts`, `src/routes/tickets.routes.ts`; wrote 3 test files (17 new tests). Running them caught a real bug — mounting `requesterContext` as bare router-level middleware made it fire for every request through that router, including an unrelated 404 for a nonexistent route, which started returning 401 instead. Fixed by mounting the router at a `/tickets` path prefix instead of unprefixed. Confirmed live end-to-end via `curl` against the built `dist/` app, including a real ticket creation and list-with-pagination against the seeded demo data. |
+
 ## Reflection
 
 _To be completed at the end of the sprint, after all nine implementation Issues are merged, alongside a
