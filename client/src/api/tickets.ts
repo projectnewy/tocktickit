@@ -13,6 +13,10 @@ export function createTicket(input: CreateTicketInput): Promise<TicketDetail> {
   return request<TicketDetail>("/api/tickets", { method: "POST", body: input });
 }
 
+export function getTicket(ticketId: number): Promise<TicketDetail> {
+  return request<TicketDetail>(`/api/tickets/${ticketId}`);
+}
+
 export interface TicketSummary {
   id: number;
   ticketNumber: string;
