@@ -16,6 +16,7 @@
 | [#26](https://github.com/projectnewy/tocktickit/pull/26) | feature/10-create-ticket-ui | Approved & merged (@vienggg) |
 | [#27](https://github.com/projectnewy/tocktickit/pull/27) | feature/11-my-tickets-ui | Approved & merged (@vienggg) |
 | [#28](https://github.com/projectnewy/tocktickit/pull/28) | feature/12-ticket-detail-ui | Approved & merged (@vienggg) |
+| [#29](https://github.com/projectnewy/tocktickit/pull/29) | feature/13-e2e-and-docs | Approved & merged (@vienggg) |
 
 **Reviewer comments received:**
 
@@ -30,6 +31,7 @@
 | #26 | "Nice work on the Create Ticket UI, robust two-phase upload handling, and clean error validation — everything looks great." |
 | #27 | "Nice job on the My Tickets screen, URL-based search params, and clean responsive layout — everything passes nicely." |
 | #28 | "Nice work on the ticket details and attachments — looks great." |
+| #29 | "Awesome job on the E2E tests, screenshots, and docs projectnewy! Everything looks solid." |
 
 **How I responded:** Every PR description already included the verification evidence (test counts,
 `curl`/browser walkthroughs, and — for #23 and #24 — the real bugs the test suite caught) before review,
