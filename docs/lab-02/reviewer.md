@@ -1,7 +1,7 @@
 # Lab 2 — Peer Review Record
 
-**Author:** <FILL IN: your real name> — <FILL IN: your student ID> — GitHub: @projectnewy
-**Peer reviewer:** <FILL IN: name> — <FILL IN: student ID> — GitHub: @vienggg
+**Author:** Phuttipong Phankitnirundorn — 67070503430 — GitHub: @projectnewy
+**Peer reviewer:** Garunyapas Danpitakkul — 67070503404 — GitHub: @vienggg
 
 ## Pull Requests I authored (reviewed by my partner)
 
