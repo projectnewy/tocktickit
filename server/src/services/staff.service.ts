@@ -1,5 +1,7 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, type Priority, type TicketStatus } from "@prisma/client";
 import { getPrisma } from "../prisma.js";
+import { BadRequestError, ConflictError, NotFoundError } from "../http/errors.js";
+import { TICKET_DETAIL_SELECT, serializeTicket } from "./ticket.service.js";
 import type { StaffTicketQuery } from "../validation/staff.schemas.js";
 
 const SORT_MAP: Record<string, Prisma.TicketOrderByWithRelationInput> = {
@@ -86,4 +88,78 @@ export async function listQueueTickets(callerId: number, query: StaffTicketQuery
     hasNextPage: query.page < totalPages,
     sort: query.sort,
   };
+}
+
+// FR-09: IT Staff/Admin can open any ticket, regardless of owner — same
+// detail shape as the Requester's own ticket.service.ts getTicketById, minus
+// the requesterId ownership predicate.
+export async function getTicketDetail(ticketId: number) {
+  const ticket = await getPrisma().ticket.findUnique({ where: { id: ticketId }, select: TICKET_DETAIL_SELECT });
+  if (!ticket) throw new NotFoundError("Ticket not found");
+  return serializeTicket(ticket);
+}
+
+// §6: New -> Open happens implicitly whenever a ticket is claimed from
+// unassigned — this is the only place the transition matrix is touched
+// outside setStatus(), per specification.md §6's "(implicit on claim)" note.
+export async function claimTicket(ticketId: number, callerId: number, targetUserId?: number) {
+  const ownerId = targetUserId ?? callerId;
+
+  const [existing, owner] = await Promise.all([
+    getPrisma().ticket.findUnique({ where: { id: ticketId } }),
+    getPrisma().user.findFirst({ where: { id: ownerId, isActive: true, role: { in: ["IT_STAFF", "ADMINISTRATOR"] } } }),
+  ]);
+  if (!existing) throw new NotFoundError("Ticket not found");
+  if (!owner) throw new BadRequestError("Target user must be an active IT Staff or Administrator");
+
+  const ticket = await getPrisma().ticket.update({
+    where: { id: ticketId },
+    data: { ownerId, ...(existing.status === "NEW" ? { status: "OPEN" as TicketStatus } : {}) },
+    select: TICKET_DETAIL_SELECT,
+  });
+  return serializeTicket(ticket);
+}
+
+// FR-11/BR-16: itPriority is independent of requestedPriority and only
+// changeable by IT Staff/Admin, after ticket creation.
+export async function setPriority(ticketId: number, itPriority: Priority) {
+  const existing = await getPrisma().ticket.findUnique({ where: { id: ticketId } });
+  if (!existing) throw new NotFoundError("Ticket not found");
+
+  const ticket = await getPrisma().ticket.update({
+    where: { id: ticketId },
+    data: { itPriority },
+    select: TICKET_DETAIL_SELECT,
+  });
+  return serializeTicket(ticket);
+}
+
+// specification.md §6 — declared as "from status -> allowed next statuses";
+// any pair not listed here is rejected with 409 (BR-17/AC-07).
+const STATUS_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
+  NEW: ["OPEN", "CANCELLED"],
+  OPEN: ["IN_PROGRESS", "CANCELLED"],
+  IN_PROGRESS: ["WAITING_FOR_REQUESTER", "RESOLVED"],
+  WAITING_FOR_REQUESTER: ["IN_PROGRESS", "RESOLVED"],
+  RESOLVED: ["CLOSED", "REOPENED"],
+  CLOSED: ["REOPENED"],
+  REOPENED: ["IN_PROGRESS"],
+  CANCELLED: [],
+};
+
+export async function setStatus(ticketId: number, status: TicketStatus) {
+  const existing = await getPrisma().ticket.findUnique({ where: { id: ticketId } });
+  if (!existing) throw new NotFoundError("Ticket not found");
+
+  const allowed = STATUS_TRANSITIONS[existing.status];
+  if (!allowed.includes(status)) {
+    throw new ConflictError(`Cannot transition from ${existing.status} to ${status}`);
+  }
+
+  const ticket = await getPrisma().ticket.update({
+    where: { id: ticketId },
+    data: { status },
+    select: TICKET_DETAIL_SELECT,
+  });
+  return serializeTicket(ticket);
 }

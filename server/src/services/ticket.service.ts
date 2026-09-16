@@ -4,7 +4,7 @@ import { nextTicketNumber } from "./ticketNumber.js";
 import { BadRequestError, NotFoundError } from "../http/errors.js";
 import type { CreateTicketInput, TicketQuery } from "../validation/ticket.schemas.js";
 
-const TICKET_DETAIL_SELECT = {
+export const TICKET_DETAIL_SELECT = {
   id: true,
   ticketNumber: true,
   summary: true,
@@ -35,7 +35,7 @@ const TICKET_DETAIL_SELECT = {
   },
 } satisfies Prisma.TicketSelect;
 
-type TicketDetailRow = Prisma.TicketGetPayload<{ select: typeof TICKET_DETAIL_SELECT }>;
+export type TicketDetailRow = Prisma.TicketGetPayload<{ select: typeof TICKET_DETAIL_SELECT }>;
 
 function serializeAttachment(a: TicketDetailRow["attachments"][number]) {
   return {
@@ -53,7 +53,7 @@ function serializeAttachment(a: TicketDetailRow["attachments"][number]) {
   };
 }
 
-function serializeTicket(t: TicketDetailRow) {
+export function serializeTicket(t: TicketDetailRow) {
   return {
     id: t.id,
     ticketNumber: t.ticketNumber,
