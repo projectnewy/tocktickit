@@ -19,14 +19,23 @@ enum Priority {
   URGENT
 }
 
-// Lab 2 only ever produces NEW. The rest exist so Lab 3 needs no enum migration.
+// Lab 3: real Ticket workflow states, replacing Lab 2's placeholder set.
 enum TicketStatus {
   NEW
-  ASSIGNED
+  OPEN
   IN_PROGRESS
+  WAITING_FOR_REQUESTER
   RESOLVED
   CLOSED
+  REOPENED
   CANCELLED
+}
+
+// Lab 3: one role per user. See specification.md BR-23.
+enum Role {
+  REQUESTER
+  IT_STAFF
+  ADMINISTRATOR
 }
 
 model Category {
@@ -46,45 +55,63 @@ model RelatedSystem {
   tickets     Ticket[]
 }
 
-model RequesterUser {
-  id         Int      @id @default(autoincrement())
-  fullName   String
-  email      String   @unique // Lab 3: becomes the login identity
-  department String?
-  isActive   Boolean  @default(true) // inactive => hidden from selector, rejected as context
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+// Lab 2's RequesterUser, extended in place for real authentication and roles.
+// @@map keeps the physical Postgres table name unchanged — this is an application-level
+// rename only, no data migration risk.
+model User {
+  id                 Int      @id @default(autoincrement())
+  fullName           String
+  email              String   @unique // login identity
+  passwordHash       String
+  role               Role     @default(REQUESTER)
+  mustChangePassword Boolean  @default(false)
+  department         String?
+  isActive           Boolean  @default(true) // inactive => cannot authenticate
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  tickets             Ticket[]
-  uploadedAttachments Attachment[] @relation("AttachmentUploader")
-  removedAttachments  Attachment[] @relation("AttachmentRemover")
+  tickets             Ticket[]       @relation("TicketRequester")
+  ownedTickets        Ticket[]       @relation("TicketOwner")
+  uploadedAttachments Attachment[]   @relation("AttachmentUploader")
+  removedAttachments  Attachment[]   @relation("AttachmentRemover")
+  comments            Comment[]
+  internalNotes       InternalNote[]
+
+  @@map("RequesterUser")
 }
 
 model Ticket {
-  id                Int          @id @default(autoincrement())
-  ticketNumber      String       @unique // TKT-2026-000042
-  summary           String       @db.VarChar(150)
-  description       String       @db.Text
-  requestedPriority Priority
-  itPriority        Priority? // nullable: figure shows it, IT Staff workflow is Lab 3
-  status            TicketStatus @default(NEW)
+  id                  Int          @id @default(autoincrement())
+  ticketNumber        String       @unique // TKT-2026-000042
+  summary             String       @db.VarChar(150)
+  description         String       @db.Text
+  requestedPriority   Priority
+  itPriority          Priority? // defaults to requestedPriority at creation; IT Staff/Admin may change it
+  status              TicketStatus @default(NEW)
+  resolutionIndicated Boolean      @default(false) // Requester's "Problem Appears Resolved" flag
 
   requesterId     Int
+  ownerId         Int? // primary Ticket Owner: active IT Staff or Administrator, nullable = unassigned
   categoryId      Int
   relatedSystemId Int
 
   createdAt DateTime @default(now()) // serialized to the client as `ticketDate`
   updatedAt DateTime @updatedAt
 
-  requester     RequesterUser @relation(fields: [requesterId], references: [id], onDelete: Restrict)
+  requester     User          @relation("TicketRequester", fields: [requesterId], references: [id], onDelete: Restrict)
+  owner         User?         @relation("TicketOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   category      Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   relatedSystem RelatedSystem @relation(fields: [relatedSystemId], references: [id], onDelete: Restrict)
   attachments   Attachment[]
+  comments      Comment[]
+  internalNotes InternalNote[]
 
   @@index([requesterId, createdAt(sort: Desc)])
   @@index([requesterId, status, createdAt(sort: Desc)])
   @@index([requesterId, categoryId])
   @@index([requesterId, relatedSystemId])
+  @@index([ownerId, status])
+  @@index([status, createdAt(sort: Desc)])
 }
 
 model Attachment {
@@ -101,11 +128,39 @@ model Attachment {
   removedReason String?   @db.VarChar(200)
   removedById   Int?
 
-  ticket     Ticket         @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  uploadedBy RequesterUser  @relation("AttachmentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
-  removedBy  RequesterUser? @relation("AttachmentRemover", fields: [removedById], references: [id], onDelete: Restrict)
+  ticket     Ticket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  uploadedBy User    @relation("AttachmentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  removedBy  User?   @relation("AttachmentRemover", fields: [removedById], references: [id], onDelete: Restrict)
 
   @@index([ticketId, removedAt])
+}
+
+// Public Comments: visible to the owning Requester, IT Staff, and Administrator. Append-only.
+model Comment {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  authorId  Int
+  body      String   @db.VarChar(2000)
+  createdAt DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([ticketId, createdAt])
+}
+
+// Internal Notes: visible only to IT Staff and Administrator. Append-only.
+model InternalNote {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  authorId  Int
+  body      String   @db.VarChar(2000)
+  createdAt DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([ticketId, createdAt])
 }
 
 // Backs ticket-number generation — see server/src/services/ticketNumber.ts.

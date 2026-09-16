@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { resetDb } from "../helpers/db.js";
+import { cookieFor } from "../helpers/auth.js";
 import { makeRequester, makeTicket } from "../helpers/factories.js";
 
 describe("GET /api/tickets/:ticketId", () => {
@@ -9,7 +10,7 @@ describe("GET /api/tickets/:ticketId", () => {
 
   it("retrieves one owned ticket with its attachments array (API-12)", async () => {
     const ticket = await makeTicket({ requesterId: 1 });
-    const res = await request(app).get(`/api/tickets/${ticket.id}`).set("X-Requester-Id", "1");
+    const res = await request(app).get(`/api/tickets/${ticket.id}`).set("Cookie", cookieFor(1, "REQUESTER"));
     expect(res.status).toBe(200);
     expect(res.body.id).toBe(ticket.id);
     expect(res.body.attachments).toEqual([]);
@@ -19,7 +20,7 @@ describe("GET /api/tickets/:ticketId", () => {
     const owner = await makeRequester();
     const ticket = await makeTicket({ requesterId: owner.id });
 
-    const res = await request(app).get(`/api/tickets/${ticket.id}`).set("X-Requester-Id", "1");
+    const res = await request(app).get(`/api/tickets/${ticket.id}`).set("Cookie", cookieFor(1, "REQUESTER"));
 
     expect(res.status).toBe(404);
     expect(res.body).not.toHaveProperty("summary");
@@ -30,8 +31,8 @@ describe("GET /api/tickets/:ticketId", () => {
     const owner = await makeRequester();
     const ownedTicket = await makeTicket({ requesterId: owner.id });
 
-    const notOwned = await request(app).get(`/api/tickets/${ownedTicket.id}`).set("X-Requester-Id", "1");
-    const notFound = await request(app).get("/api/tickets/999999").set("X-Requester-Id", "1");
+    const notOwned = await request(app).get(`/api/tickets/${ownedTicket.id}`).set("Cookie", cookieFor(1, "REQUESTER"));
+    const notFound = await request(app).get("/api/tickets/999999").set("Cookie", cookieFor(1, "REQUESTER"));
 
     expect(notOwned.status).toBe(404);
     expect(notFound.status).toBe(404);
@@ -39,7 +40,7 @@ describe("GET /api/tickets/:ticketId", () => {
   });
 
   it("rejects a non-numeric ticket id", async () => {
-    const res = await request(app).get("/api/tickets/not-a-number").set("X-Requester-Id", "1");
+    const res = await request(app).get("/api/tickets/not-a-number").set("Cookie", cookieFor(1, "REQUESTER"));
     expect(res.status).toBe(400);
   });
 });

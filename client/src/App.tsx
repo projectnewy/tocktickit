@@ -1,48 +1,96 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { RequesterProvider } from "./context/RequesterContext.js";
-import { RequesterGuard } from "./components/layout/RequesterGuard.js";
+import { AuthProvider } from "./context/AuthContext.js";
+import { AuthGuard, RequireAuth, RoleGuard } from "./components/layout/AuthGuard.js";
 import { AppShell } from "./components/layout/AppShell.js";
-import RequesterSelection from "./pages/RequesterSelection.js";
+import Login from "./pages/Login.js";
+import ChangePassword from "./pages/ChangePassword.js";
 import CreateTicket from "./pages/CreateTicket.js";
 import MyTickets from "./pages/MyTickets.js";
 import RequesterTicketDetail from "./pages/RequesterTicketDetail.js";
+import StaffTicketQueue from "./pages/StaffTicketQueue.js";
+import StaffTicketDetail from "./pages/StaffTicketDetail.js";
+import UserManagement from "./pages/UserManagement.js";
 import SystemCheck from "./pages/SystemCheck.js";
 import NotFound from "./pages/NotFound.js";
 export default function App() {
   return (
     <BrowserRouter>
-      <RequesterProvider>
+      <AuthProvider>
         <Routes>
           <Route path="/" element={<Navigate to="/tickets" replace />} />
-          <Route path="/select-requester" element={<RequesterSelection />} />
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/change-password"
+            element={
+              <RequireAuth>
+                <ChangePassword />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/tickets"
             element={
-              <RequesterGuard>
+              <AuthGuard>
                 <AppShell>
                   <MyTickets />
                 </AppShell>
-              </RequesterGuard>
+              </AuthGuard>
             }
           />
           <Route
             path="/tickets/new"
             element={
-              <RequesterGuard>
+              <AuthGuard>
                 <AppShell>
                   <CreateTicket />
                 </AppShell>
-              </RequesterGuard>
+              </AuthGuard>
             }
           />
           <Route
             path="/tickets/:ticketId"
             element={
-              <RequesterGuard>
+              <AuthGuard>
                 <AppShell>
                   <RequesterTicketDetail />
                 </AppShell>
-              </RequesterGuard>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/staff/tickets"
+            element={
+              <AuthGuard>
+                <RoleGuard allowed={["IT_STAFF", "ADMINISTRATOR"]}>
+                  <AppShell>
+                    <StaffTicketQueue />
+                  </AppShell>
+                </RoleGuard>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/staff/tickets/:ticketId"
+            element={
+              <AuthGuard>
+                <RoleGuard allowed={["IT_STAFF", "ADMINISTRATOR"]}>
+                  <AppShell>
+                    <StaffTicketDetail />
+                  </AppShell>
+                </RoleGuard>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <AuthGuard>
+                <RoleGuard allowed={["ADMINISTRATOR"]}>
+                  <AppShell>
+                    <UserManagement />
+                  </AppShell>
+                </RoleGuard>
+              </AuthGuard>
             }
           />
           <Route
@@ -55,7 +103,7 @@ export default function App() {
           />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </RequesterProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

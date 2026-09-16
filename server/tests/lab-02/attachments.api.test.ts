@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { resetDb } from "../helpers/db.js";
+import { cookieFor } from "../helpers/auth.js";
 import { makeRequester, makeTicket, makeAttachment } from "../helpers/factories.js";
 
 // Minimal valid file bytes for each allowed type, enough for the magic-byte sniff to pass.
@@ -18,7 +19,7 @@ describe("POST /api/tickets/:ticketId/attachments", () => {
 
     const png = await request(app)
       .post(`/api/tickets/${ticket.id}/attachments`)
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .attach("file", PNG_BYTES, { filename: "photo.png", contentType: "image/png" });
     expect(png.status).toBe(201);
     expect(png.body.originalFilename).toBe("photo.png");
@@ -26,7 +27,7 @@ describe("POST /api/tickets/:ticketId/attachments", () => {
 
     const pdf = await request(app)
       .post(`/api/tickets/${ticket.id}/attachments`)
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .attach("file", PDF_BYTES, { filename: "report.pdf", contentType: "application/pdf" });
     expect(pdf.status).toBe(201);
   });
@@ -35,7 +36,7 @@ describe("POST /api/tickets/:ticketId/attachments", () => {
     const ticket = await makeTicket({ requesterId: 1 });
     const res = await request(app)
       .post(`/api/tickets/${ticket.id}/attachments`)
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .attach("file", TEXT_BYTES, { filename: "notes.txt", contentType: "text/plain" });
     expect(res.status).toBe(415);
   });
@@ -45,7 +46,7 @@ describe("POST /api/tickets/:ticketId/attachments", () => {
     const oversized = Buffer.concat([JPEG_BYTES, Buffer.alloc(5 * 1024 * 1024)]);
     const res = await request(app)
       .post(`/api/tickets/${ticket.id}/attachments`)
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .attach("file", oversized, { filename: "huge.jpg", contentType: "image/jpeg" });
     expect(res.status).toBe(413);
   });
@@ -54,7 +55,7 @@ describe("POST /api/tickets/:ticketId/attachments", () => {
     const ticket = await makeTicket({ requesterId: 1 });
     const res = await request(app)
       .post(`/api/tickets/${ticket.id}/attachments`)
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .attach("file", TEXT_BYTES, { filename: "fake.png", contentType: "image/png" });
     expect(res.status).toBe(415);
   });
@@ -66,7 +67,7 @@ describe("POST /api/tickets/:ticketId/attachments", () => {
     }
     const res = await request(app)
       .post(`/api/tickets/${ticket.id}/attachments`)
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .attach("file", PNG_BYTES, { filename: "one-too-many.png", contentType: "image/png" });
     expect(res.status).toBe(409);
   });
@@ -80,12 +81,12 @@ describe("POST /api/tickets/:ticketId/attachments", () => {
 
     await request(app)
       .delete(`/api/attachments/${toRemove.id}`)
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .send({ reason: "Wrong file" });
 
     const res = await request(app)
       .post(`/api/tickets/${ticket.id}/attachments`)
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .attach("file", PNG_BYTES, { filename: "replacement.png", contentType: "image/png" });
     expect(res.status).toBe(201);
   });
@@ -100,7 +101,7 @@ describe("DELETE /api/attachments/:attachmentId", () => {
 
     const res = await request(app)
       .delete(`/api/attachments/${attachment.id}`)
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .send({ reason: "Uploaded by mistake" });
 
     expect(res.status).toBe(200);
@@ -115,7 +116,7 @@ describe("DELETE /api/attachments/:attachmentId", () => {
 
     const res = await request(app)
       .delete(`/api/attachments/${attachment.id}`)
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .send({});
     expect(res.status).toBe(400);
   });
@@ -123,11 +124,11 @@ describe("DELETE /api/attachments/:attachmentId", () => {
   it("rejects removing an already-removed attachment", async () => {
     const ticket = await makeTicket({ requesterId: 1 });
     const attachment = await makeAttachment({ ticketId: ticket.id, uploadedById: 1 });
-    await request(app).delete(`/api/attachments/${attachment.id}`).set("X-Requester-Id", "1").send({ reason: "First removal" });
+    await request(app).delete(`/api/attachments/${attachment.id}`).set("Cookie", cookieFor(1, "REQUESTER")).send({ reason: "First removal" });
 
     const res = await request(app)
       .delete(`/api/attachments/${attachment.id}`)
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .send({ reason: "Second removal" });
     expect(res.status).toBe(409);
   });
@@ -140,12 +141,12 @@ describe("GET /api/attachments/:attachmentId/download", () => {
     const ticket = await makeTicket({ requesterId: 1 });
     const upload = await request(app)
       .post(`/api/tickets/${ticket.id}/attachments`)
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .attach("file", PNG_BYTES, { filename: "photo.png", contentType: "image/png" });
 
     const res = await request(app)
       .get(`/api/attachments/${upload.body.id}/download`)
-      .set("X-Requester-Id", "1");
+      .set("Cookie", cookieFor(1, "REQUESTER"));
 
     expect(res.status).toBe(200);
     expect(res.headers["content-disposition"]).toContain("photo.png");
@@ -154,11 +155,11 @@ describe("GET /api/attachments/:attachmentId/download", () => {
   it("returns 410 for a removed attachment; bytes are never served (API-20, AC-07)", async () => {
     const ticket = await makeTicket({ requesterId: 1 });
     const attachment = await makeAttachment({ ticketId: ticket.id, uploadedById: 1 });
-    await request(app).delete(`/api/attachments/${attachment.id}`).set("X-Requester-Id", "1").send({ reason: "Wrong file" });
+    await request(app).delete(`/api/attachments/${attachment.id}`).set("Cookie", cookieFor(1, "REQUESTER")).send({ reason: "Wrong file" });
 
     const res = await request(app)
       .get(`/api/attachments/${attachment.id}/download`)
-      .set("X-Requester-Id", "1");
+      .set("Cookie", cookieFor(1, "REQUESTER"));
     expect(res.status).toBe(410);
   });
 });
@@ -171,25 +172,25 @@ describe("cross-requester attachment access (API-21, FR-12)", () => {
     const ticket = await makeTicket({ requesterId: owner.id });
     const attachment = await makeAttachment({ ticketId: ticket.id, uploadedById: owner.id });
 
-    const get = await request(app).get(`/api/attachments/${attachment.id}`).set("X-Requester-Id", "1");
+    const get = await request(app).get(`/api/attachments/${attachment.id}`).set("Cookie", cookieFor(1, "REQUESTER"));
     expect(get.status).toBe(404);
     expect(get.body).not.toHaveProperty("originalFilename");
 
-    const download = await request(app).get(`/api/attachments/${attachment.id}/download`).set("X-Requester-Id", "1");
+    const download = await request(app).get(`/api/attachments/${attachment.id}/download`).set("Cookie", cookieFor(1, "REQUESTER"));
     expect(download.status).toBe(404);
 
-    const list = await request(app).get(`/api/tickets/${ticket.id}/attachments`).set("X-Requester-Id", "1");
+    const list = await request(app).get(`/api/tickets/${ticket.id}/attachments`).set("Cookie", cookieFor(1, "REQUESTER"));
     expect(list.status).toBe(404);
 
     const remove = await request(app)
       .delete(`/api/attachments/${attachment.id}`)
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .send({ reason: "Trying to remove someone else's file" });
     expect(remove.status).toBe(404);
 
     const upload = await request(app)
       .post(`/api/tickets/${ticket.id}/attachments`)
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .attach("file", PNG_BYTES, { filename: "intrusion.png", contentType: "image/png" });
     expect(upload.status).toBe(404);
   });

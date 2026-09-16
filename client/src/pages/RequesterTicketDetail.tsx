@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getTicket } from "../api/tickets.js";
+import { indicateResolution } from "../api/comments.js";
+import { ApiError } from "../api/client.js";
 import type { TicketDetail } from "../api/types.js";
 import { AttachmentSection } from "../components/attachments/AttachmentSection.js";
+import { CommentsSection } from "../components/comments/CommentsSection.js";
 import { StatusBadge } from "../components/ui/StatusBadge.js";
 import { PriorityBadge } from "../components/ui/PriorityBadge.js";
 import { Alert } from "../components/ui/Alert.js";
@@ -35,6 +38,8 @@ export default function RequesterTicketDetail() {
   const { ticketId } = useParams<{ ticketId: string }>();
   const [state, setState] = useState<LoadState>("loading");
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
+  const [resolving, setResolving] = useState(false);
+  const [resolutionError, setResolutionError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -68,6 +73,22 @@ export default function RequesterTicketDetail() {
     return <Alert variant="error">Ticket not found.</Alert>;
   }
 
+  async function handleIndicateResolution() {
+    if (!ticket) return;
+    setResolutionError("");
+    setResolving(true);
+    try {
+      const updated = await indicateResolution(ticket.id);
+      setTicket(updated);
+    } catch (err) {
+      setResolutionError(
+        err instanceof ApiError ? err.message : "Unable to update this ticket. Please try again."
+      );
+    } finally {
+      setResolving(false);
+    }
+  }
+
   return (
     <div className="d-flex flex-column gap-3">
       <div className="tk-surface p-3">
@@ -89,6 +110,27 @@ export default function RequesterTicketDetail() {
           <ReadOnlyField label="Summary" value={ticket.summary} full />
           <ReadOnlyField label="Description" value={ticket.description} full multiline />
         </div>
+
+        {resolutionError && (
+          <div className="mt-3">
+            <Alert variant="error">{resolutionError}</Alert>
+          </div>
+        )}
+
+        <div className="mt-3">
+          {ticket.resolutionIndicated ? (
+            <span className="badge text-bg-success">You marked this problem as appearing resolved</span>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-outline-success"
+              disabled={resolving}
+              onClick={handleIndicateResolution}
+            >
+              {resolving ? "Saving…" : "Problem Appears Resolved"}
+            </button>
+          )}
+        </div>
       </div>
 
       <AttachmentSection
@@ -96,6 +138,8 @@ export default function RequesterTicketDetail() {
         attachments={ticket.attachments}
         onAttachmentsChange={(attachments) => setTicket({ ...ticket, attachments })}
       />
+
+      <CommentsSection ticketId={ticket.id} />
     </div>
   );
 }

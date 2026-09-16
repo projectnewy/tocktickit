@@ -4,8 +4,6 @@ import userEvent from "@testing-library/user-event";
 import MyTickets from "../../src/pages/MyTickets.js";
 import * as ticketsApi from "../../src/api/tickets.js";
 import * as referenceApi from "../../src/api/reference.js";
-import { useSelectedRequester } from "../../src/context/RequesterContext.js";
-import type { Requester } from "../../src/api/types.js";
 import type { TicketListResponse, TicketSummary } from "../../src/api/tickets.js";
 import { renderWithProviders } from "../helpers/render.js";
 
@@ -40,17 +38,6 @@ function mockReferenceData() {
   vi.spyOn(referenceApi, "listRelatedSystems").mockResolvedValue([{ id: 7, name: "Corporate Laptop" }]);
 }
 
-// A tiny test-only consumer so a test can trigger a requester switch through
-// the real context, the same mechanism RequesterBadge uses in the app shell.
-function SwitchRequesterButton({ to }: { to: Requester }) {
-  const { selectRequester } = useSelectedRequester();
-  return (
-    <button type="button" onClick={() => selectRequester(to)}>
-      Switch to {to.fullName}
-    </button>
-  );
-}
-
 describe("MyTickets", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -70,11 +57,14 @@ describe("MyTickets", () => {
 
     // Both the desktop table and mobile card list render simultaneously in
     // jsdom (it doesn't evaluate the d-none/d-lg-table media-query classes),
-    // so scope to the table to avoid an ambiguous duplicate match.
+    // so scope to the table to avoid an ambiguous duplicate match. Use
+    // find* (not get*) for the row content too: AuthProvider's async
+    // bootstrap can trigger a second, identical re-fetch shortly after the
+    // first render, so the table may briefly re-render before settling.
     const table = await screen.findByRole("table");
-    expect(within(table).getByText("TKT-2026-000001")).toBeInTheDocument();
+    expect(await within(table).findByText("TKT-2026-000001")).toBeInTheDocument();
     expect(within(table).getByText("Laptop battery drains quickly")).toBeInTheDocument();
-    expect(screen.getByText(/page 1 of 2/i)).toBeInTheDocument();
+    expect(await screen.findByText(/page 1 of 2/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /next/i })).toBeEnabled();
     expect(screen.getByRole("button", { name: /previous/i })).toBeDisabled();
   });
@@ -126,25 +116,6 @@ describe("MyTickets", () => {
     renderWithProviders(<MyTickets />, { route: "/tickets?categoryId=2" });
     expect(await screen.findByText(/no tickets match your filters/i)).toBeInTheDocument();
     expect(screen.queryByText(/no tickets yet/i)).not.toBeInTheDocument();
-  });
-
-  it("refetches when the selected requester changes (UI-11, AC-12)", async () => {
-    mockReferenceData();
-    const listSpy = vi.spyOn(ticketsApi, "listTickets").mockResolvedValue(EMPTY_RESPONSE);
-    const requesterB: Requester = { id: 2, fullName: "Michael Brown", email: "michael@example.com", department: null };
-
-    renderWithProviders(
-      <>
-        <SwitchRequesterButton to={requesterB} />
-        <MyTickets />
-      </>,
-      { route: "/tickets" }
-    );
-    await waitFor(() => expect(listSpy).toHaveBeenCalledTimes(1));
-
-    await userEvent.click(screen.getByRole("button", { name: /switch to michael brown/i }));
-
-    await waitFor(() => expect(listSpy).toHaveBeenCalledTimes(2));
   });
 
   it("renders both the desktop table and mobile card list markup for the same data", async () => {

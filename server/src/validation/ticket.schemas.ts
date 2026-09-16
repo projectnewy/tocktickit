@@ -13,7 +13,7 @@ export const SORT_ALLOWLIST = [
   "summary:desc",
 ] as const;
 
-const STATUS_VALUES = ["NEW", "ASSIGNED", "IN_PROGRESS", "RESOLVED", "CLOSED", "CANCELLED"] as const;
+const STATUS_VALUES = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"] as const;
 const PRIORITY_VALUES = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const;
 
 export const createTicketSchema = z.object({

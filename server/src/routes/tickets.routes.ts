@@ -1,14 +1,18 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
+import type { Role } from "@prisma/client";
 import { asyncHandler } from "../http/asyncHandler.js";
-import { requesterContext } from "../http/requesterContext.js";
-import { BadRequestError } from "../http/errors.js";
+import { authContext } from "../http/authContext.js";
+import { BadRequestError, ForbiddenError } from "../http/errors.js";
 import { createTicketSchema, ticketQuerySchema } from "../validation/ticket.schemas.js";
+import { createCommentSchema } from "../validation/comment.schemas.js";
 import * as ticketService from "../services/ticket.service.js";
 import * as attachmentService from "../services/attachment.service.js";
+import * as commentService from "../services/comment.service.js";
+import * as noteService from "../services/internalNote.service.js";
 import { uploadAttachment } from "../upload/multerUpload.js";
 
 const router = Router();
-router.use(requesterContext);
+router.use(authContext);
 
 function parseTicketId(param: string): number {
   const id = Number(param);
@@ -65,6 +69,64 @@ router.get(
     const ticketId = parseTicketId(req.params.ticketId);
     const attachments = await attachmentService.listAttachmentsForTicket(req.requesterId!, ticketId);
     res.status(200).json(attachments);
+  })
+);
+
+router.get(
+  "/:ticketId/comments",
+  asyncHandler(async (req, res) => {
+    const ticketId = parseTicketId(req.params.ticketId);
+    const comments = await commentService.listComments(req.requesterId!, req.userRole!, ticketId);
+    res.status(200).json(comments);
+  })
+);
+
+router.post(
+  "/:ticketId/comments",
+  asyncHandler(async (req, res) => {
+    const ticketId = parseTicketId(req.params.ticketId);
+    const { body } = createCommentSchema.parse(req.body);
+    const comment = await commentService.addComment(req.requesterId!, req.userRole!, ticketId, body);
+    res.status(201).json(comment);
+  })
+);
+
+// BR-22/AC-04: 403 for anyone but IT Staff/Administrator, checked before any
+// ticket lookup, so the response never confirms or denies the ticket's
+// existence either way. Allow-listed (not "!== REQUESTER") so this fails
+// closed if req.userRole is ever undefined or a future role is introduced.
+const NOTE_ROLES: Role[] = ["IT_STAFF", "ADMINISTRATOR"];
+function requireStaffForNotes(req: Request) {
+  if (!req.userRole || !NOTE_ROLES.includes(req.userRole)) throw new ForbiddenError("Forbidden");
+}
+
+router.get(
+  "/:ticketId/notes",
+  asyncHandler(async (req, res) => {
+    requireStaffForNotes(req);
+    const ticketId = parseTicketId(req.params.ticketId);
+    const notes = await noteService.listNotes(ticketId);
+    res.status(200).json(notes);
+  })
+);
+
+router.post(
+  "/:ticketId/notes",
+  asyncHandler(async (req, res) => {
+    requireStaffForNotes(req);
+    const ticketId = parseTicketId(req.params.ticketId);
+    const { body } = createCommentSchema.parse(req.body);
+    const note = await noteService.addNote(req.requesterId!, ticketId, body);
+    res.status(201).json(note);
+  })
+);
+
+router.post(
+  "/:ticketId/resolution-indication",
+  asyncHandler(async (req, res) => {
+    const ticketId = parseTicketId(req.params.ticketId);
+    const ticket = await ticketService.indicateResolution(req.requesterId!, ticketId);
+    res.status(200).json(ticket);
   })
 );
 
