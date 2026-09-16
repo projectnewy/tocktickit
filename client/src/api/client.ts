@@ -1,14 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
-// Module-scoped, not React state — bridges RequesterContext to the plain,
-// spy-able api modules without threading requesterId through every call
-// site. In Lab 3 this becomes the access token.
-let currentRequesterId: number | null = null;
-
-export function setCurrentRequesterId(id: number | null): void {
-  currentRequesterId = id;
-}
-
 export class ApiError extends Error {
   status: number;
   body: unknown;
@@ -21,14 +12,13 @@ export class ApiError extends Error {
 }
 
 interface RequestOptions {
-  method?: "GET" | "POST" | "DELETE";
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: unknown;
   signal?: AbortSignal;
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = {};
-  if (currentRequesterId !== null) headers["X-Requester-Id"] = String(currentRequesterId);
 
   let body: BodyInit | undefined;
   if (options.body instanceof FormData) {
@@ -44,6 +34,11 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     headers,
     body,
     signal: options.signal,
+    // Required for the httpOnly tk_session cookie to be sent/stored —
+    // without this, the browser drops Set-Cookie on the login response and
+    // never attaches the cookie to later requests, since the API and the
+    // Vite dev server are different origins (ports).
+    credentials: "include",
   });
 
   if (!res.ok) {
@@ -62,14 +57,12 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   return (await res.json()) as T;
 }
 
-// Attachment downloads need the X-Requester-Id header, so a plain <a href>
-// can't be used — fetch the bytes as a blob and hand them to the caller,
-// which triggers the save via an object URL.
+// Attachment downloads need the auth cookie too, so a plain <a href> that
+// bypasses fetch() can't be relied on to carry credentials consistently —
+// fetch the bytes as a blob and hand them to the caller, which triggers the
+// save via an object URL.
 export async function requestBlob(path: string): Promise<Blob> {
-  const headers: Record<string, string> = {};
-  if (currentRequesterId !== null) headers["X-Requester-Id"] = String(currentRequesterId);
-
-  const res = await fetch(`${API_URL}${path}`, { headers });
+  const res = await fetch(`${API_URL}${path}`, { credentials: "include" });
 
   if (!res.ok) {
     let parsed: unknown;

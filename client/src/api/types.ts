@@ -15,8 +15,34 @@ export interface Requester {
   department: string | null;
 }
 
+export type Role = "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+
+export interface AuthUser {
+  id: number;
+  fullName: string;
+  email: string;
+  role: Role;
+  mustChangePassword: boolean;
+}
+
+export interface Comment {
+  id: number;
+  ticketId: number;
+  body: string;
+  createdAt: string;
+  author: { id: number; fullName: string };
+}
+
 export type Priority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
-export type TicketStatus = "NEW" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "CANCELLED";
+export type TicketStatus =
+  | "NEW"
+  | "OPEN"
+  | "IN_PROGRESS"
+  | "WAITING_FOR_REQUESTER"
+  | "RESOLVED"
+  | "CLOSED"
+  | "REOPENED"
+  | "CANCELLED";
 
 export interface AttachmentMeta {
   id: number;
@@ -40,6 +66,7 @@ export interface TicketDetail {
   requestedPriority: Priority;
   itPriority: Priority | null;
   status: TicketStatus;
+  resolutionIndicated: boolean;
   ticketDate: string;
   requester: { id: number; fullName: string };
   category: { id: number; name: string };

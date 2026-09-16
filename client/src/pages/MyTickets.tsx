@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listTickets, type TicketSummary } from "../api/tickets.js";
 import { useTicketListParams } from "../hooks/useTicketListParams.js";
-import { useSelectedRequester } from "../context/RequesterContext.js";
 import { TicketFilters } from "../components/tickets/TicketFilters.js";
 import { TicketTable } from "../components/tickets/TicketTable.js";
 import { TicketCardList } from "../components/tickets/TicketCardList.js";
@@ -25,7 +24,6 @@ const DEFAULT_META: ListMeta = { page: 1, totalPages: 1, totalItems: 0, hasPrevi
 
 export default function MyTickets() {
   const { query, setQuery, clearFilters } = useTicketListParams();
-  const { requester } = useSelectedRequester();
   const [state, setState] = useState<LoadState>("loading");
   const [items, setItems] = useState<TicketSummary[]>([]);
   const [meta, setMeta] = useState<ListMeta>(DEFAULT_META);
@@ -52,10 +50,12 @@ export default function MyTickets() {
     return () => {
       cancelled = true;
     };
-    // Re-fetch whenever the URL-driven query changes OR the selected
-    // requester changes (AC-12 — switching requesters must reload the list).
+    // Re-fetch whenever the URL-driven query changes. Lab 3 has no in-app
+    // "switch user" — a different authenticated identity only ever appears
+    // via a fresh login, which remounts this component through routing
+    // anyway, so no extra dependency is needed to catch that case.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(query), requester?.id]);
+  }, [JSON.stringify(query)]);
 
   const hasActiveFilters = !!(
     query.q ||

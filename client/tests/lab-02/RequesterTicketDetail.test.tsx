@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { screen } from "@testing-library/react";
 import { Routes, Route } from "react-router-dom";
 import RequesterTicketDetail from "../../src/pages/RequesterTicketDetail.js";
 import * as ticketsApi from "../../src/api/tickets.js";
+import * as commentsApi from "../../src/api/comments.js";
 import { ApiError } from "../../src/api/client.js";
 import type { TicketDetail } from "../../src/api/types.js";
 import { renderWithProviders } from "../helpers/render.js";
@@ -15,6 +16,7 @@ const TICKET: TicketDetail = {
   requestedPriority: "MEDIUM",
   itPriority: null,
   status: "NEW",
+  resolutionIndicated: false,
   ticketDate: "2026-01-01T00:00:00.000Z",
   requester: { id: 1, fullName: "Jennifer Anderson" },
   category: { id: 2, name: "Hardware" },
@@ -35,6 +37,13 @@ function renderDetail(route: string) {
 }
 
 describe("RequesterTicketDetail", () => {
+  beforeEach(() => {
+    // CommentsSection self-fetches on mount; give it a default empty
+    // resolution so tests that don't care about comments aren't left with an
+    // unhandled/failing fetch.
+    vi.spyOn(commentsApi, "listComments").mockResolvedValue([]);
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
