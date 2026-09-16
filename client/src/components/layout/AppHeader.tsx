@@ -32,6 +32,11 @@ export function AppHeader() {
               Ticket Queue
             </NavLink>
           )}
+          {user?.role === "ADMINISTRATOR" && (
+            <NavLink to="/admin/users" className={navLinkClass}>
+              Users
+            </NavLink>
+          )}
         </nav>
         <UserBadge />
       </div>
