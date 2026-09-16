@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { listUsers, type AdminUser, type UserQuery } from "../api/admin.js";
+import { useAuth } from "../context/AuthContext.js";
 import type { Role } from "../api/types.js";
 import { RoleBadge } from "../components/ui/RoleBadge.js";
 import { ActiveBadge } from "../components/ui/ActiveBadge.js";
@@ -16,11 +17,13 @@ type ModalState = { kind: "create" } | { kind: "edit"; user: AdminUser } | { kin
 
 // ui-spec.md §5: single screen, no route nesting, no pagination/multi-sort.
 export default function UserManagement() {
+  const { user: currentUser } = useAuth();
   const [query, setQuery] = useState<UserQuery>({});
   const [searchInput, setSearchInput] = useState("");
   const [state, setState] = useState<LoadState>("loading");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [modal, setModal] = useState<ModalState>(null);
+  const [successMessage, setSuccessMessage] = useState("");
 
   function refetch() {
     setState("loading");
@@ -42,8 +45,10 @@ export default function UserManagement() {
     setQuery((q) => ({ ...q, q: searchInput || undefined }));
   }
 
-  function closeAndRefetch() {
+  // Lab 3 §8.6: clear feedback for success states too, not just errors.
+  function closeWithSuccess(message: string) {
     setModal(null);
+    setSuccessMessage(message);
     refetch();
   }
 
@@ -54,10 +59,19 @@ export default function UserManagement() {
           <h1 className="h4 mb-0">User Management</h1>
           <p className="text-secondary mb-0">Create, edit, and manage TokTickIT accounts.</p>
         </div>
-        <button type="button" className="btn btn-primary" onClick={() => setModal({ kind: "create" })}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => {
+            setSuccessMessage("");
+            setModal({ kind: "create" });
+          }}
+        >
           Create User
         </button>
       </div>
+
+      {successMessage && <Alert variant="success">{successMessage}</Alert>}
 
       <div className="tk-surface p-3 mb-3">
         <form className="row g-2 align-items-end" onSubmit={handleSearchSubmit}>
@@ -108,49 +122,61 @@ export default function UserManagement() {
       )}
 
       {state === "success" && users.length > 0 && (
-        <table className="table align-middle">
-          <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Email</th>
-              <th scope="col">Role</th>
-              <th scope="col">Status</th>
-              <th scope="col" aria-label="Actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td>{u.fullName}</td>
-                <td>{u.email}</td>
-                <td>
-                  <RoleBadge role={u.role} />
-                </td>
-                <td>
-                  <ActiveBadge isActive={u.isActive} />
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-primary"
-                    onClick={() => setModal({ kind: "edit", user: u })}
-                  >
-                    Edit
-                  </button>
-                </td>
+        <div className="table-responsive">
+          <table className="table align-middle">
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Email</th>
+                <th scope="col">Role</th>
+                <th scope="col">Status</th>
+                <th scope="col" aria-label="Actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id}>
+                  <td>{u.fullName}</td>
+                  <td>{u.email}</td>
+                  <td>
+                    <RoleBadge role={u.role} />
+                  </td>
+                  <td>
+                    <ActiveBadge isActive={u.isActive} />
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => {
+                        setSuccessMessage("");
+                        setModal({ kind: "edit", user: u });
+                      }}
+                    >
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      {modal?.kind === "create" && <UserFormModal onCancel={() => setModal(null)} onSaved={closeAndRefetch} />}
+      {modal?.kind === "create" && currentUser && (
+        <UserFormModal
+          currentUserId={currentUser.id}
+          onCancel={() => setModal(null)}
+          onSaved={() => closeWithSuccess("User created.")}
+        />
+      )}
 
-      {modal?.kind === "edit" && (
+      {modal?.kind === "edit" && currentUser && (
         <UserFormModal
           user={modal.user}
+          currentUserId={currentUser.id}
           onCancel={() => setModal(null)}
-          onSaved={closeAndRefetch}
+          onSaved={() => closeWithSuccess("Changes saved.")}
           onResetPassword={(user) => setModal({ kind: "reset", user })}
         />
       )}
@@ -159,7 +185,7 @@ export default function UserManagement() {
         <ResetPasswordModal
           user={modal.user}
           onCancel={() => setModal({ kind: "edit", user: modal.user })}
-          onDone={closeAndRefetch}
+          onDone={() => closeWithSuccess("Password reset.")}
         />
       )}
     </div>

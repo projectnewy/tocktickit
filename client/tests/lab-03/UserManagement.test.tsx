@@ -139,5 +139,45 @@ describe("UserManagement", () => {
     await userEvent.click(screen.getByRole("button", { name: /^set password$/i }));
 
     await waitFor(() => expect(resetSpy).toHaveBeenCalledWith(3, "BrandNewPassword1!"));
+    expect(await screen.findByText(/password reset\./i)).toBeInTheDocument();
+  });
+
+  it("shows a success message on the page after creating and after editing a user (Lab 3 §8.6)", async () => {
+    const target = makeUser({ id: 3 });
+    vi.spyOn(adminApi, "listUsers").mockResolvedValue([target]);
+    vi.spyOn(adminApi, "createUser").mockResolvedValue(makeUser({ id: 9, fullName: "New Hire" }));
+    vi.spyOn(adminApi, "updateUser").mockResolvedValue({ ...target, fullName: "Renamed" });
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: /create user/i }));
+    const createDialog = within(screen.getByRole("dialog"));
+    await userEvent.type(createDialog.getByLabelText(/^name/i), "New Hire");
+    await userEvent.type(createDialog.getByLabelText(/^email/i), "new.hire@example.com");
+    await userEvent.type(createDialog.getByLabelText(/initial password/i), "Password123!");
+    await userEvent.click(createDialog.getByRole("button", { name: /^create user$/i }));
+    expect(await screen.findByText(/user created\./i)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /edit/i }));
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: /save changes/i }));
+    expect(await screen.findByText(/changes saved\./i)).toBeInTheDocument();
+  });
+
+  it("disables the Active toggle and shows a hint when the Administrator edits their own account (BR-25 UI hint)", async () => {
+    const self = makeUser({ id: ADMIN_USER.id, fullName: "Olivia Grant", role: "ADMINISTRATOR", isActive: true });
+    vi.spyOn(adminApi, "listUsers").mockResolvedValue([self]);
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: /edit/i }));
+    const dialog = within(screen.getByRole("dialog"));
+    expect(dialog.getByLabelText(/^active$/i)).toBeDisabled();
+    expect(dialog.getByText(/can't deactivate your own account/i)).toBeInTheDocument();
+  });
+
+  it("wraps the user table in a responsive container (no horizontal overflow at any viewport)", async () => {
+    vi.spyOn(adminApi, "listUsers").mockResolvedValue([makeUser()]);
+    renderPage();
+
+    const table = await screen.findByRole("table");
+    expect(table.closest(".table-responsive")).not.toBeNull();
   });
 });

@@ -9,6 +9,7 @@ const ROLE_OPTIONS: Role[] = ["REQUESTER", "IT_STAFF", "ADMINISTRATOR"];
 
 interface UserFormModalProps {
   user?: AdminUser; // present = edit mode, absent = create mode
+  currentUserId: number; // BR-25: disables the Active toggle when editing self
   onCancel: () => void;
   onSaved: (user: AdminUser) => void;
   onResetPassword?: (user: AdminUser) => void; // edit mode only
@@ -17,7 +18,8 @@ interface UserFormModalProps {
 // ui-spec.md §5: "ConfirmDialog-style, hand-rolled" — same modal chrome as
 // ConfirmDialog, but this form has multiple fields and its own inline
 // validation/error handling, so it isn't built on top of that component.
-export function UserFormModal({ user, onCancel, onSaved, onResetPassword }: UserFormModalProps) {
+export function UserFormModal({ user, currentUserId, onCancel, onSaved, onResetPassword }: UserFormModalProps) {
+  const isSelf = user?.id === currentUserId;
   const isEdit = !!user;
   const [fullName, setFullName] = useState(user?.fullName ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
@@ -111,18 +113,24 @@ export function UserFormModal({ user, onCancel, onSaved, onResetPassword }: User
                 </div>
 
                 {isEdit && (
-                  <div className="form-check form-switch mb-3">
-                    <input
-                      id="user-active"
-                      type="checkbox"
-                      className="form-check-input"
-                      checked={isActive}
-                      onChange={(e) => setIsActive(e.target.checked)}
-                      disabled={submitting}
-                    />
-                    <label htmlFor="user-active" className="form-check-label">
-                      Active
-                    </label>
+                  <div className="mb-3">
+                    <div className="form-check form-switch">
+                      <input
+                        id="user-active"
+                        type="checkbox"
+                        className="form-check-input"
+                        checked={isActive}
+                        onChange={(e) => setIsActive(e.target.checked)}
+                        disabled={submitting || isSelf}
+                      />
+                      <label htmlFor="user-active" className="form-check-label">
+                        Active
+                      </label>
+                    </div>
+                    {/* BR-25: disabled rather than left to error on submit — a
+                        clearer signal than a round-trip failure, per the
+                        reviewer's UI-hint request on PR #43. */}
+                    {isSelf && <p className="tk-help mb-0">You can't deactivate your own account.</p>}
                   </div>
                 )}
 
