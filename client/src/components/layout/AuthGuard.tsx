@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.js";
+import type { Role } from "../../api/types.js";
 import { Spinner } from "../ui/Spinner.js";
 
 // Base check: must be logged in. Deliberately does NOT redirect on
@@ -37,4 +38,17 @@ export function AuthGuard({ children }: { children: ReactNode }) {
       {!isBootstrapping && user?.mustChangePassword ? <Navigate to="/change-password" replace /> : children}
     </RequireAuth>
   );
+}
+
+// Route-level enforcement of BR-20/FR-20 ("blocks direct URL access, not
+// just hidden nav links") — used on top of AuthGuard for screens restricted
+// to specific roles, e.g. the IT Staff Ticket Queue.
+export function RoleGuard({ allowed, children }: { allowed: Role[]; children: ReactNode }) {
+  const { user } = useAuth();
+
+  if (user && !allowed.includes(user.role)) {
+    return <Navigate to="/tickets" replace />;
+  }
+
+  return <>{children}</>;
 }

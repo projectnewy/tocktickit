@@ -1,12 +1,13 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.js";
-import { AuthGuard, RequireAuth } from "./components/layout/AuthGuard.js";
+import { AuthGuard, RequireAuth, RoleGuard } from "./components/layout/AuthGuard.js";
 import { AppShell } from "./components/layout/AppShell.js";
 import Login from "./pages/Login.js";
 import ChangePassword from "./pages/ChangePassword.js";
 import CreateTicket from "./pages/CreateTicket.js";
 import MyTickets from "./pages/MyTickets.js";
 import RequesterTicketDetail from "./pages/RequesterTicketDetail.js";
+import StaffTicketQueue from "./pages/StaffTicketQueue.js";
 import SystemCheck from "./pages/SystemCheck.js";
 import NotFound from "./pages/NotFound.js";
 export default function App() {
@@ -51,6 +52,18 @@ export default function App() {
                 <AppShell>
                   <RequesterTicketDetail />
                 </AppShell>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/staff/tickets"
+            element={
+              <AuthGuard>
+                <RoleGuard allowed={["IT_STAFF", "ADMINISTRATOR"]}>
+                  <AppShell>
+                    <StaffTicketQueue />
+                  </AppShell>
+                </RoleGuard>
               </AuthGuard>
             }
           />
