@@ -5,6 +5,7 @@ import authRouter from "./auth.routes.js";
 import ticketsRouter from "./tickets.routes.js";
 import attachmentsRouter from "./attachments.routes.js";
 import staffRouter from "./staff.routes.js";
+import adminRouter from "./admin.routes.js";
 
 const router = Router();
 router.use(healthRouter);
@@ -18,5 +19,6 @@ router.use("/auth", authRouter);
 router.use("/tickets", ticketsRouter);
 router.use("/attachments", attachmentsRouter);
 router.use("/staff", staffRouter);
+router.use("/admin", adminRouter);
 
 export default router;
