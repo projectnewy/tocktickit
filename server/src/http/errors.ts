@@ -21,6 +21,12 @@ export class UnauthorizedError extends AppError {
   }
 }
 
+export class ForbiddenError extends AppError {
+  constructor(message = "Forbidden") {
+    super(403, message);
+  }
+}
+
 export class NotFoundError extends AppError {
   constructor(message = "Not found") {
     super(404, message);
@@ -48,5 +54,11 @@ export class PayloadTooLargeError extends AppError {
 export class UnsupportedMediaTypeError extends AppError {
   constructor(message = "Unsupported media type") {
     super(415, message);
+  }
+}
+
+export class UnprocessableEntityError extends AppError {
+  constructor(message = "Unprocessable request") {
+    super(422, message);
   }
 }

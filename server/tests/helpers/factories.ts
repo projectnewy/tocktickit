@@ -1,6 +1,7 @@
-import type { Priority } from "@prisma/client";
+import type { Priority, Role } from "@prisma/client";
 import { getPrisma } from "../../src/prisma.js";
 import { nextTicketNumber } from "../../src/services/ticketNumber.js";
+import { hashPassword } from "../../src/auth/password.js";
 
 let counter = 0;
 function unique(label: string) {
@@ -8,16 +9,50 @@ function unique(label: string) {
   return `${label}-${counter}-${Date.now()}`;
 }
 
-export async function makeRequester(overrides: Partial<{ fullName: string; email: string; department: string | null; isActive: boolean }> = {}) {
+// Shared across every factory-created user in tests — never a real secret.
+export const TEST_PASSWORD = "Password123!";
+let testPasswordHash: string | null = null;
+async function getTestPasswordHash() {
+  testPasswordHash ??= await hashPassword(TEST_PASSWORD);
+  return testPasswordHash;
+}
+
+export async function makeUser(
+  overrides: Partial<{
+    fullName: string;
+    email: string;
+    department: string | null;
+    isActive: boolean;
+    role: Role;
+    mustChangePassword: boolean;
+  }> = {}
+) {
   const prisma = getPrisma();
-  return prisma.requesterUser.create({
+  return prisma.user.create({
     data: {
-      fullName: overrides.fullName ?? "Test Requester",
-      email: overrides.email ?? `${unique("requester")}@example.com`,
+      fullName: overrides.fullName ?? "Test User",
+      email: overrides.email ?? `${unique("user")}@example.com`,
       department: overrides.department ?? "QA",
       isActive: overrides.isActive ?? true,
+      role: overrides.role ?? "REQUESTER",
+      mustChangePassword: overrides.mustChangePassword ?? false,
+      passwordHash: await getTestPasswordHash(),
     },
   });
+}
+
+// Back-compat alias — Lab 2 tests call makeRequester(); keep it as a thin
+// wrapper over makeUser() rather than rewriting every existing call site.
+export async function makeRequester(overrides: Partial<{ fullName: string; email: string; department: string | null; isActive: boolean }> = {}) {
+  return makeUser({ ...overrides, role: "REQUESTER" });
+}
+
+export async function makeItStaff(overrides: Partial<{ fullName: string; email: string; isActive: boolean }> = {}) {
+  return makeUser({ ...overrides, role: "IT_STAFF" });
+}
+
+export async function makeAdministrator(overrides: Partial<{ fullName: string; email: string; isActive: boolean }> = {}) {
+  return makeUser({ ...overrides, role: "ADMINISTRATOR" });
 }
 
 export async function makeTicket(overrides: {
@@ -74,6 +109,28 @@ export async function makeAttachment(overrides: {
       storedFilename: `${unique("stored")}.png`,
       mimeType: overrides.mimeType ?? "image/png",
       sizeBytes: overrides.sizeBytes ?? 1024,
+    },
+  });
+}
+
+export async function makeComment(overrides: { ticketId: number; authorId: number; body?: string }) {
+  const prisma = getPrisma();
+  return prisma.comment.create({
+    data: {
+      ticketId: overrides.ticketId,
+      authorId: overrides.authorId,
+      body: overrides.body ?? unique("Test public comment"),
+    },
+  });
+}
+
+export async function makeInternalNote(overrides: { ticketId: number; authorId: number; body?: string }) {
+  const prisma = getPrisma();
+  return prisma.internalNote.create({
+    data: {
+      ticketId: overrides.ticketId,
+      authorId: overrides.authorId,
+      body: overrides.body ?? unique("Test internal note"),
     },
   });
 }

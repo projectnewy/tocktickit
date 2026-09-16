@@ -1,12 +1,12 @@
 import { Router, type Request } from "express";
 import { asyncHandler } from "../http/asyncHandler.js";
-import { requesterContext } from "../http/requesterContext.js";
+import { authContext } from "../http/authContext.js";
 import { BadRequestError } from "../http/errors.js";
 import { removeAttachmentSchema } from "../validation/attachment.schemas.js";
 import * as attachmentService from "../services/attachment.service.js";
 
 const router = Router();
-router.use(requesterContext);
+router.use(authContext);
 
 function parseAttachmentId(req: Request): number {
   const id = Number(req.params.attachmentId);
