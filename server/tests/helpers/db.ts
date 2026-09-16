@@ -6,8 +6,11 @@ import { seedReference } from "../../src/db/seedData.js";
 // previous test or a previous run. Never run against the dev database.
 export async function resetDb() {
   const prisma = getPrisma();
+  // "RequesterUser" is the physical table name behind the `User` Prisma
+  // model (see schema.prisma's @@map) — the literal table name here must
+  // match that mapping, not the model name.
   await prisma.$executeRawUnsafe(
-    `TRUNCATE "Attachment", "Ticket", "TicketCounter", "RequesterUser", "RelatedSystem", "Category" RESTART IDENTITY CASCADE;`
+    `TRUNCATE "Comment", "InternalNote", "Attachment", "Ticket", "TicketCounter", "RequesterUser", "RelatedSystem", "Category" RESTART IDENTITY CASCADE;`
   );
   await seedReference(prisma);
 }

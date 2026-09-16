@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { resetDb } from "../helpers/db.js";
+import { cookieFor } from "../helpers/auth.js";
 import { makeRequester } from "../helpers/factories.js";
 import { getPrisma } from "../../src/prisma.js";
 
@@ -19,7 +20,7 @@ describe("POST /api/tickets", () => {
   it("creates a ticket with a unique, backend-generated ticket number and status NEW (API-01)", async () => {
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .send(VALID_TICKET);
 
     expect(res.status).toBe(201);
@@ -35,7 +36,7 @@ describe("POST /api/tickets", () => {
   it("generates 20 distinct ticket numbers under 20 concurrent creates (API-02)", async () => {
     const responses = await Promise.all(
       Array.from({ length: 20 }, () =>
-        request(app).post("/api/tickets").set("X-Requester-Id", "1").send(VALID_TICKET)
+        request(app).post("/api/tickets").set("Cookie", cookieFor(1, "REQUESTER")).send(VALID_TICKET)
       )
     );
 
@@ -48,7 +49,7 @@ describe("POST /api/tickets", () => {
     const before = await getPrisma().ticket.count();
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Requester-Id", "1")
+      .set("Cookie", cookieFor(1, "REQUESTER"))
       .send({ categoryId: 2, relatedSystemId: 7, summary: "hi", description: "short", requestedPriority: "SUPER" });
 
     expect(res.status).toBe(400);
@@ -58,7 +59,7 @@ describe("POST /api/tickets", () => {
 
   it("rejects an inactive category reference (API-04)", async () => {
     await getPrisma().category.updateMany({ where: { id: 2 }, data: { isActive: false } });
-    const res = await request(app).post("/api/tickets").set("X-Requester-Id", "1").send(VALID_TICKET);
+    const res = await request(app).post("/api/tickets").set("Cookie", cookieFor(1, "REQUESTER")).send(VALID_TICKET);
     expect(res.status).toBe(400);
   });
 
@@ -71,7 +72,7 @@ describe("POST /api/tickets", () => {
     const inactive = await makeRequester({ isActive: false });
     const res = await request(app)
       .post("/api/tickets")
-      .set("X-Requester-Id", String(inactive.id))
+      .set("Cookie", cookieFor(inactive.id, "REQUESTER"))
       .send(VALID_TICKET);
     expect(res.status).toBe(401);
   });

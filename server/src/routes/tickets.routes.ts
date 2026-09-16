@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { asyncHandler } from "../http/asyncHandler.js";
-import { requesterContext } from "../http/requesterContext.js";
+import { authContext } from "../http/authContext.js";
 import { BadRequestError } from "../http/errors.js";
 import { createTicketSchema, ticketQuerySchema } from "../validation/ticket.schemas.js";
 import * as ticketService from "../services/ticket.service.js";
@@ -8,7 +8,7 @@ import * as attachmentService from "../services/attachment.service.js";
 import { uploadAttachment } from "../upload/multerUpload.js";
 
 const router = Router();
-router.use(requesterContext);
+router.use(authContext);
 
 function parseTicketId(param: string): number {
   const id = Number(param);
