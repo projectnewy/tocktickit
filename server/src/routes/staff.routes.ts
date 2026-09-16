@@ -15,6 +15,14 @@ function parseTicketId(param: string): number {
 }
 
 router.get(
+  "/assignees",
+  asyncHandler(async (_req, res) => {
+    const assignees = await staffService.listAssignableStaff();
+    res.status(200).json(assignees);
+  })
+);
+
+router.get(
   "/tickets",
   asyncHandler(async (req, res) => {
     const query = staffQuerySchema.parse(req.query);

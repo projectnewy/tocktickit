@@ -1,4 +1,5 @@
 import { Router, type Request } from "express";
+import type { Role } from "@prisma/client";
 import { asyncHandler } from "../http/asyncHandler.js";
 import { authContext } from "../http/authContext.js";
 import { BadRequestError, ForbiddenError } from "../http/errors.js";
@@ -90,10 +91,13 @@ router.post(
   })
 );
 
-// BR-22/AC-04: 403 for a Requester, checked before any ticket lookup, so the
-// response never confirms or denies the ticket's existence either way.
+// BR-22/AC-04: 403 for anyone but IT Staff/Administrator, checked before any
+// ticket lookup, so the response never confirms or denies the ticket's
+// existence either way. Allow-listed (not "!== REQUESTER") so this fails
+// closed if req.userRole is ever undefined or a future role is introduced.
+const NOTE_ROLES: Role[] = ["IT_STAFF", "ADMINISTRATOR"];
 function requireStaffForNotes(req: Request) {
-  if (req.userRole === "REQUESTER") throw new ForbiddenError("Forbidden");
+  if (!req.userRole || !NOTE_ROLES.includes(req.userRole)) throw new ForbiddenError("Forbidden");
 }
 
 router.get(

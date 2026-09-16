@@ -90,6 +90,17 @@ export async function listQueueTickets(callerId: number, query: StaffTicketQuery
   };
 }
 
+// ui-spec.md §4: populates the "Reassign" dropdown — every active IT
+// Staff/Administrator is a legal Ticket owner per BR-15, so this is the
+// complete assignee pool, not scoped to the caller.
+export async function listAssignableStaff() {
+  return getPrisma().user.findMany({
+    where: { isActive: true, role: { in: ["IT_STAFF", "ADMINISTRATOR"] } },
+    select: { id: true, fullName: true, role: true },
+    orderBy: { fullName: "asc" },
+  });
+}
+
 // FR-09: IT Staff/Admin can open any ticket, regardless of owner — same
 // detail shape as the Requester's own ticket.service.ts getTicketById, minus
 // the requesterId ownership predicate.

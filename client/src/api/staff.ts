@@ -1,5 +1,17 @@
 import { request } from "./client.js";
-import type { Priority, TicketDetail, TicketStatus } from "./types.js";
+import type { Priority, Role, TicketDetail, TicketStatus } from "./types.js";
+
+export interface StaffAssignee {
+  id: number;
+  fullName: string;
+  role: Role;
+}
+
+// ui-spec.md §4: "Reassign dropdown when assigned" — every active IT
+// Staff/Administrator, the complete legal-owner pool per BR-15.
+export function listAssignees(): Promise<StaffAssignee[]> {
+  return request<StaffAssignee[]>(`/api/staff/assignees`);
+}
 
 export interface StaffTicketSummary {
   id: number;

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.js";
-import { getStaffTicket, claimTicket, setTicketPriority, setTicketStatus } from "../api/staff.js";
+import { getStaffTicket, claimTicket, setTicketPriority, setTicketStatus, listAssignees, type StaffAssignee } from "../api/staff.js";
 import { ApiError } from "../api/client.js";
 import type { Priority, TicketDetail, TicketStatus } from "../api/types.js";
 import { PRIORITY_OPTIONS } from "../config.js";
@@ -39,11 +38,13 @@ function ReadOnlyField({ label, value, full, multiline }: ReadOnlyFieldProps) {
 // Comments and Internal Notes sections below Attachments.
 export default function StaffTicketDetail() {
   const { ticketId } = useParams<{ ticketId: string }>();
-  const { user } = useAuth();
   const [state, setState] = useState<LoadState>("loading");
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
+  const [assignees, setAssignees] = useState<StaffAssignee[]>([]);
   const [actionError, setActionError] = useState("");
+  const [actionSuccess, setActionSuccess] = useState("");
   const [claiming, setClaiming] = useState(false);
+  const [reassigning, setReassigning] = useState(false);
   const [savingPriority, setSavingPriority] = useState(false);
   const [savingStatus, setSavingStatus] = useState(false);
 
@@ -70,17 +71,32 @@ export default function StaffTicketDetail() {
     };
   }, [ticketId]);
 
+  useEffect(() => {
+    let cancelled = false;
+    // ui-spec.md §4: populates the "Reassign" dropdown — independent of the
+    // ticket load, so a failure here degrades to "no reassign options" rather
+    // than blocking the rest of the screen.
+    listAssignees()
+      .then((data) => {
+        if (!cancelled) setAssignees(data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   if (state === "loading") return <Spinner label="Loading ticket…" />;
   if (state === "error" || !ticket) return <Alert variant="error">Ticket not found.</Alert>;
 
-  const isOwnedByMe = ticket.ticketOwner?.id === user?.id;
-
   async function handleClaim() {
     setActionError("");
+    setActionSuccess("");
     setClaiming(true);
     try {
       const updated = await claimTicket(ticket!.id);
       setTicket(updated);
+      setActionSuccess("Ticket claimed.");
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : "Unable to update ownership. Please try again.");
     } finally {
@@ -88,12 +104,30 @@ export default function StaffTicketDetail() {
     }
   }
 
+  async function handleReassign(targetUserId: string) {
+    if (!targetUserId || Number(targetUserId) === ticket!.ticketOwner?.id) return;
+    setActionError("");
+    setActionSuccess("");
+    setReassigning(true);
+    try {
+      const updated = await claimTicket(ticket!.id, Number(targetUserId));
+      setTicket(updated);
+      setActionSuccess(`Reassigned to ${updated.ticketOwner?.fullName}.`);
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : "Unable to reassign this ticket. Please try again.");
+    } finally {
+      setReassigning(false);
+    }
+  }
+
   async function handlePriorityChange(itPriority: string) {
     setActionError("");
+    setActionSuccess("");
     setSavingPriority(true);
     try {
       const updated = await setTicketPriority(ticket!.id, itPriority as Priority);
       setTicket(updated);
+      setActionSuccess(`IT Priority set to ${itPriority}.`);
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : "Unable to update IT Priority. Please try again.");
     } finally {
@@ -103,10 +137,12 @@ export default function StaffTicketDetail() {
 
   async function handleStatusChange(status: string) {
     setActionError("");
+    setActionSuccess("");
     setSavingStatus(true);
     try {
       const updated = await setTicketStatus(ticket!.id, status as TicketStatus);
       setTicket(updated);
+      setActionSuccess(`Status changed to ${status}.`);
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : "Unable to update status. Please try again.");
     } finally {
@@ -135,14 +171,37 @@ export default function StaffTicketDetail() {
 
           <div className="col-12 col-md-6">
             <div className="form-label fw-semibold mb-1">Owner</div>
-            <div className="d-flex align-items-center gap-2">
-              <span>{ticket.ticketOwner?.fullName ?? "Unassigned"}</span>
-              {!isOwnedByMe && (
+            {!ticket.ticketOwner ? (
+              <div className="d-flex align-items-center gap-2">
+                <span>Unassigned</span>
                 <button type="button" className="btn btn-sm btn-outline-primary" disabled={claiming} onClick={handleClaim}>
-                  {claiming ? "Saving…" : ticket.ticketOwner ? "Reassign to Me" : "Claim"}
+                  {claiming ? "Saving…" : "Claim"}
                 </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <label className="d-flex align-items-center gap-2">
+                <span className="visually-hidden">Reassign to</span>
+                <select
+                  className="form-select form-select-sm w-auto"
+                  value={ticket.ticketOwner.id}
+                  disabled={reassigning}
+                  onChange={(e) => handleReassign(e.target.value)}
+                >
+                  {/* Current owner may not (yet) be in the active-assignee list
+                      the moment they're deactivated elsewhere — keep them
+                      selectable as the status quo rather than silently
+                      dropping the selection. */}
+                  {!assignees.some((a) => a.id === ticket.ticketOwner!.id) && (
+                    <option value={ticket.ticketOwner.id}>{ticket.ticketOwner.fullName}</option>
+                  )}
+                  {assignees.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.fullName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
 
           <div className="col-12 col-md-6">
@@ -200,6 +259,12 @@ export default function StaffTicketDetail() {
         {actionError && (
           <div className="mt-3">
             <Alert variant="error">{actionError}</Alert>
+          </div>
+        )}
+
+        {!actionError && actionSuccess && (
+          <div className="mt-3">
+            <Alert variant="success">{actionSuccess}</Alert>
           </div>
         )}
 

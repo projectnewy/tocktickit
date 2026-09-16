@@ -6,6 +6,34 @@ import { getPrisma } from "../../src/prisma.js";
 import { makeUser, makeItStaff, makeAdministrator, makeTicket } from "../helpers/factories.js";
 import { cookieFor } from "../helpers/auth.js";
 
+describe("GET /api/staff/assignees (ui-spec.md §4 Reassign dropdown)", () => {
+  beforeEach(resetDb);
+
+  it("lists only active IT Staff/Administrator, excluding Requesters and inactive staff", async () => {
+    const staff = await makeItStaff();
+    const admin = await makeAdministrator();
+    const inactiveStaff = await makeItStaff({ isActive: false });
+    const requester = await makeUser({ role: "REQUESTER" });
+
+    const res = await request(app)
+      .get(`/api/staff/assignees`)
+      .set("Cookie", cookieFor(staff.id, "IT_STAFF"));
+    expect(res.status).toBe(200);
+    const ids = res.body.map((a: { id: number }) => a.id);
+    expect(ids).toEqual(expect.arrayContaining([staff.id, admin.id]));
+    expect(ids).not.toContain(inactiveStaff.id);
+    expect(ids).not.toContain(requester.id);
+  });
+
+  it("rejects a Requester caller with 403", async () => {
+    const requester = await makeUser({ role: "REQUESTER" });
+    const res = await request(app)
+      .get(`/api/staff/assignees`)
+      .set("Cookie", cookieFor(requester.id, "REQUESTER"));
+    expect(res.status).toBe(403);
+  });
+});
+
 describe("GET /api/staff/tickets/:id (FR-09, AC-15)", () => {
   beforeEach(resetDb);
 

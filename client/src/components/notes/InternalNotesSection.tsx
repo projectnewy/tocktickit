@@ -96,7 +96,7 @@ export function InternalNotesSection({ ticketId }: { ticketId: number }) {
           onChange={(e) => setDraft(e.target.value)}
           disabled={submitting}
         />
-        <button type="submit" className="btn btn-outline-warning" disabled={submitting || !draft.trim()}>
+        <button type="submit" className="btn btn-warning text-dark" disabled={submitting || !draft.trim()}>
           {submitting ? "Posting…" : "Post Internal Note"}
         </button>
       </form>

@@ -6,6 +6,7 @@ import StaffTicketDetail from "../../src/pages/StaffTicketDetail.js";
 import * as staffApi from "../../src/api/staff.js";
 import * as commentsApi from "../../src/api/comments.js";
 import * as notesApi from "../../src/api/notes.js";
+import type { StaffAssignee } from "../../src/api/staff.js";
 import type { TicketDetail } from "../../src/api/types.js";
 import type { AuthUser } from "../../src/api/types.js";
 import { renderWithProviders } from "../helpers/render.js";
@@ -17,6 +18,11 @@ const IT_STAFF_USER: AuthUser = {
   role: "IT_STAFF",
   mustChangePassword: false,
 };
+
+const ASSIGNEES: StaffAssignee[] = [
+  { id: 2, fullName: "Priya Natarajan", role: "IT_STAFF" },
+  { id: 9, fullName: "Carlos Mendes", role: "IT_STAFF" },
+];
 
 const TICKET: TicketDetail = {
   id: 42,
@@ -48,6 +54,7 @@ describe("StaffTicketDetail", () => {
   beforeEach(() => {
     vi.spyOn(commentsApi, "listComments").mockResolvedValue([]);
     vi.spyOn(notesApi, "listNotes").mockResolvedValue([]);
+    vi.spyOn(staffApi, "listAssignees").mockResolvedValue(ASSIGNEES);
   });
 
   afterEach(() => {
@@ -67,7 +74,7 @@ describe("StaffTicketDetail", () => {
     expect(screen.getByLabelText(/^status$/i)).toBeInTheDocument();
   });
 
-  it("claims an unassigned ticket for the caller and reflects the new owner (FR-10, AC-06)", async () => {
+  it("claims an unassigned ticket for the caller, shows a success message, and switches to the Reassign dropdown (FR-10, AC-06)", async () => {
     vi.spyOn(staffApi, "getStaffTicket").mockResolvedValue(TICKET);
     const claimSpy = vi.spyOn(staffApi, "claimTicket").mockResolvedValue({
       ...TICKET,
@@ -81,23 +88,46 @@ describe("StaffTicketDetail", () => {
     await userEvent.click(screen.getByRole("button", { name: /claim/i }));
 
     await waitFor(() => expect(claimSpy).toHaveBeenCalledWith(42));
-    expect(await screen.findByText("Priya Natarajan")).toBeInTheDocument();
-    // Now owned by the caller — no more claim/reassign action needed.
-    expect(screen.queryByRole("button", { name: /claim|reassign/i })).not.toBeInTheDocument();
+    expect(await screen.findByText(/ticket claimed/i)).toBeInTheDocument();
+    // Now owned by the caller — the Claim button is replaced by the Reassign dropdown.
+    expect(screen.queryByRole("button", { name: /claim/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /reassign to/i })).toHaveValue("2");
   });
 
-  it("offers 'Reassign to Me' when the ticket is already owned by someone else (BR-14)", async () => {
+  it("offers a Reassign dropdown listing active staff when the ticket is already owned (BR-14, ui-spec.md §4)", async () => {
     vi.spyOn(staffApi, "getStaffTicket").mockResolvedValue({
       ...TICKET,
       ticketOwner: { id: 9, fullName: "Carlos Mendes" },
     });
     renderDetail("/staff/tickets/42");
 
-    expect(await screen.findByText("Carlos Mendes")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /reassign to me/i })).toBeInTheDocument();
+    await screen.findByText("TKT-2026-000042");
+    const select = screen.getByRole("combobox", { name: /reassign to/i }) as HTMLSelectElement;
+    expect(select).toHaveValue("9");
+    const optionLabels = Array.from(select.options).map((o) => o.textContent);
+    expect(optionLabels).toEqual(expect.arrayContaining(["Priya Natarajan", "Carlos Mendes"]));
   });
 
-  it("sets IT Priority independently of Requested Priority (FR-11)", async () => {
+  it("reassigns to a different active staff member via the dropdown", async () => {
+    vi.spyOn(staffApi, "getStaffTicket").mockResolvedValue({
+      ...TICKET,
+      ticketOwner: { id: 9, fullName: "Carlos Mendes" },
+    });
+    const claimSpy = vi.spyOn(staffApi, "claimTicket").mockResolvedValue({
+      ...TICKET,
+      ticketOwner: { id: 2, fullName: "Priya Natarajan" },
+    });
+
+    renderDetail("/staff/tickets/42");
+    const select = await screen.findByRole("combobox", { name: /reassign to/i });
+
+    await userEvent.selectOptions(select, "2");
+
+    await waitFor(() => expect(claimSpy).toHaveBeenCalledWith(42, 2));
+    expect(await screen.findByText(/reassigned to priya natarajan/i)).toBeInTheDocument();
+  });
+
+  it("sets IT Priority independently of Requested Priority and shows a success message (FR-11)", async () => {
     vi.spyOn(staffApi, "getStaffTicket").mockResolvedValue(TICKET);
     const prioritySpy = vi.spyOn(staffApi, "setTicketPriority").mockResolvedValue({ ...TICKET, itPriority: "URGENT" });
 
@@ -107,6 +137,7 @@ describe("StaffTicketDetail", () => {
     await userEvent.selectOptions(screen.getByLabelText(/it priority/i), "URGENT");
 
     await waitFor(() => expect(prioritySpy).toHaveBeenCalledWith(42, "URGENT"));
+    expect(await screen.findByText(/it priority set to urgent/i)).toBeInTheDocument();
   });
 
   it("only offers valid next statuses and shows a 409 error without changing the displayed status (BR-17, AC-07)", async () => {
