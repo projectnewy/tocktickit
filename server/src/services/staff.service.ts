@@ -146,8 +146,10 @@ export async function setPriority(ticketId: number, itPriority: Priority) {
 }
 
 // specification.md §6 — declared as "from status -> allowed next statuses";
-// any pair not listed here is rejected with 409 (BR-17/AC-07).
-const STATUS_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
+// any pair not listed here is rejected with 409 (BR-17/AC-07). Exported for
+// UNIT-01 (tests.md) — a direct table test, independent of the DB-backed
+// setStatus() below.
+export const STATUS_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
   NEW: ["OPEN", "CANCELLED"],
   OPEN: ["IN_PROGRESS", "CANCELLED"],
   IN_PROGRESS: ["WAITING_FOR_REQUESTER", "RESOLVED"],
