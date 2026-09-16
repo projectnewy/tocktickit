@@ -4,7 +4,7 @@ import type { Category, RelatedSystem } from "../../api/types.js";
 import type { TicketListQuery } from "../../api/tickets.js";
 import { PRIORITY_OPTIONS } from "../../config.js";
 
-const STATUS_OPTIONS = ["NEW", "ASSIGNED", "IN_PROGRESS", "RESOLVED", "CLOSED", "CANCELLED"] as const;
+const STATUS_OPTIONS = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"] as const;
 
 interface TicketFiltersProps {
   query: TicketListQuery;

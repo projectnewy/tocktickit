@@ -3,8 +3,10 @@ import { asyncHandler } from "../http/asyncHandler.js";
 import { authContext } from "../http/authContext.js";
 import { BadRequestError } from "../http/errors.js";
 import { createTicketSchema, ticketQuerySchema } from "../validation/ticket.schemas.js";
+import { createCommentSchema } from "../validation/comment.schemas.js";
 import * as ticketService from "../services/ticket.service.js";
 import * as attachmentService from "../services/attachment.service.js";
+import * as commentService from "../services/comment.service.js";
 import { uploadAttachment } from "../upload/multerUpload.js";
 
 const router = Router();
@@ -65,6 +67,34 @@ router.get(
     const ticketId = parseTicketId(req.params.ticketId);
     const attachments = await attachmentService.listAttachmentsForTicket(req.requesterId!, ticketId);
     res.status(200).json(attachments);
+  })
+);
+
+router.get(
+  "/:ticketId/comments",
+  asyncHandler(async (req, res) => {
+    const ticketId = parseTicketId(req.params.ticketId);
+    const comments = await commentService.listCommentsForRequester(req.requesterId!, ticketId);
+    res.status(200).json(comments);
+  })
+);
+
+router.post(
+  "/:ticketId/comments",
+  asyncHandler(async (req, res) => {
+    const ticketId = parseTicketId(req.params.ticketId);
+    const { body } = createCommentSchema.parse(req.body);
+    const comment = await commentService.addCommentAsRequester(req.requesterId!, ticketId, body);
+    res.status(201).json(comment);
+  })
+);
+
+router.post(
+  "/:ticketId/resolution-indication",
+  asyncHandler(async (req, res) => {
+    const ticketId = parseTicketId(req.params.ticketId);
+    const ticket = await ticketService.indicateResolution(req.requesterId!, ticketId);
+    res.status(200).json(ticket);
   })
 );
 

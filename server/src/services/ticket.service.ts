@@ -12,8 +12,10 @@ const TICKET_DETAIL_SELECT = {
   requestedPriority: true,
   itPriority: true,
   status: true,
+  resolutionIndicated: true,
   createdAt: true,
   requester: { select: { id: true, fullName: true } },
+  owner: { select: { id: true, fullName: true } },
   category: { select: { id: true, name: true } },
   relatedSystem: { select: { id: true, name: true } },
   attachments: {
@@ -60,12 +62,12 @@ function serializeTicket(t: TicketDetailRow) {
     requestedPriority: t.requestedPriority,
     itPriority: t.itPriority,
     status: t.status,
+    resolutionIndicated: t.resolutionIndicated,
     ticketDate: t.createdAt,
     requester: t.requester,
     category: t.category,
     relatedSystem: t.relatedSystem,
-    // No IT Staff model exists yet in Lab 2 — see specification.md §11.
-    ticketOwner: null as { id: number; fullName: string } | null,
+    ticketOwner: t.owner,
     attachments: t.attachments.map(serializeAttachment),
   };
 }
@@ -207,5 +209,20 @@ export async function getTicketById(requesterId: number, ticketId: number) {
   // Same response whether the id doesn't exist or belongs to a different
   // requester — see specification.md §11 on why 404 rather than 403.
   if (!ticket) throw new NotFoundError("Ticket not found");
+  return serializeTicket(ticket);
+}
+
+// FR-07/BR-05: the Requester's own signal that the problem looks fixed. Does
+// not move the status transition matrix — only IT Staff/Administrator can
+// set Resolved/Closed (see comment.service.ts's authorization split).
+export async function indicateResolution(requesterId: number, ticketId: number) {
+  const existing = await getPrisma().ticket.findFirst({ where: { id: ticketId, requesterId } });
+  if (!existing) throw new NotFoundError("Ticket not found");
+
+  const ticket = await getPrisma().ticket.update({
+    where: { id: ticketId },
+    data: { resolutionIndicated: true },
+    select: TICKET_DETAIL_SELECT,
+  });
   return serializeTicket(ticket);
 }

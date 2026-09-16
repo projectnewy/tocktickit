@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { RequesterBadge } from "./RequesterBadge.js";
+import { UserBadge } from "./UserBadge.js";
 
 function navLinkClass({ isActive }: { isActive: boolean }): string {
   return `tk-nav-link${isActive ? " active" : ""}`;
@@ -18,7 +18,7 @@ export function AppHeader() {
             Create Ticket
           </NavLink>
         </nav>
-        <RequesterBadge />
+        <UserBadge />
       </div>
     </header>
   );
