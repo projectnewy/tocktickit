@@ -1,3 +1,4 @@
+import type { Role } from "@prisma/client";
 import { getPrisma } from "../prisma.js";
 import { NotFoundError } from "../http/errors.js";
 
@@ -11,15 +12,21 @@ function serializeComment(c: { id: number; ticketId: number; body: string; creat
   };
 }
 
-// Requester-scoped: only the owning Requester may read/post Public Comments
-// through these functions. IT Staff/Administrator access the same Comments
-// (any ticket, not just owned ones) through the staff routes added in
-// Issue #35 — kept as a separate entry point rather than an `isStaff` flag
-// here, since the staff side also needs to see Internal Notes in the same
-// call and has a different ownership check entirely.
-export async function listCommentsForRequester(requesterId: number, ticketId: number) {
-  const ticket = await getPrisma().ticket.findFirst({ where: { id: ticketId, requesterId } });
+// BR-04/api-spec.md: the owning Requester, IT Staff, and Administrator can
+// all read/post Public Comments on a ticket — a Requester is scoped to their
+// own ticket (404 if not owned, uniform with nonexistent, per Lab 2's
+// ownership convention), while IT Staff/Administrator can reach any ticket.
+async function ensureTicketVisible(callerId: number, role: Role, ticketId: number) {
+  const ticket =
+    role === "REQUESTER"
+      ? await getPrisma().ticket.findFirst({ where: { id: ticketId, requesterId: callerId } })
+      : await getPrisma().ticket.findUnique({ where: { id: ticketId } });
   if (!ticket) throw new NotFoundError("Ticket not found");
+  return ticket;
+}
+
+export async function listComments(callerId: number, role: Role, ticketId: number) {
+  await ensureTicketVisible(callerId, role, ticketId);
 
   const comments = await getPrisma().comment.findMany({
     where: { ticketId },
@@ -29,12 +36,11 @@ export async function listCommentsForRequester(requesterId: number, ticketId: nu
   return comments.map(serializeComment);
 }
 
-export async function addCommentAsRequester(requesterId: number, ticketId: number, body: string) {
-  const ticket = await getPrisma().ticket.findFirst({ where: { id: ticketId, requesterId } });
-  if (!ticket) throw new NotFoundError("Ticket not found");
+export async function addComment(callerId: number, role: Role, ticketId: number, body: string) {
+  await ensureTicketVisible(callerId, role, ticketId);
 
   const comment = await getPrisma().comment.create({
-    data: { ticketId, authorId: requesterId, body },
+    data: { ticketId, authorId: callerId, body },
     select: { id: true, ticketId: true, body: true, createdAt: true, author: { select: { id: true, fullName: true } } },
   });
   return serializeComment(comment);

@@ -8,6 +8,7 @@ import CreateTicket from "./pages/CreateTicket.js";
 import MyTickets from "./pages/MyTickets.js";
 import RequesterTicketDetail from "./pages/RequesterTicketDetail.js";
 import StaffTicketQueue from "./pages/StaffTicketQueue.js";
+import StaffTicketDetail from "./pages/StaffTicketDetail.js";
 import SystemCheck from "./pages/SystemCheck.js";
 import NotFound from "./pages/NotFound.js";
 export default function App() {
@@ -62,6 +63,18 @@ export default function App() {
                 <RoleGuard allowed={["IT_STAFF", "ADMINISTRATOR"]}>
                   <AppShell>
                     <StaffTicketQueue />
+                  </AppShell>
+                </RoleGuard>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/staff/tickets/:ticketId"
+            element={
+              <AuthGuard>
+                <RoleGuard allowed={["IT_STAFF", "ADMINISTRATOR"]}>
+                  <AppShell>
+                    <StaffTicketDetail />
                   </AppShell>
                 </RoleGuard>
               </AuthGuard>

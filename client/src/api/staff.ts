@@ -1,5 +1,17 @@
 import { request } from "./client.js";
-import type { Priority, TicketStatus } from "./types.js";
+import type { Priority, Role, TicketDetail, TicketStatus } from "./types.js";
+
+export interface StaffAssignee {
+  id: number;
+  fullName: string;
+  role: Role;
+}
+
+// ui-spec.md §4: "Reassign dropdown when assigned" — every active IT
+// Staff/Administrator, the complete legal-owner pool per BR-15.
+export function listAssignees(): Promise<StaffAssignee[]> {
+  return request<StaffAssignee[]>(`/api/staff/assignees`);
+}
 
 export interface StaffTicketSummary {
   id: number;
@@ -49,4 +61,28 @@ export function listStaffTickets(query: StaffTicketListQuery = {}): Promise<Staf
   for (const s of query.status ?? []) params.append("status", s);
   const qs = params.toString();
   return request<StaffTicketListResponse>(`/api/staff/tickets${qs ? `?${qs}` : ""}`);
+}
+
+// FR-09..FR-12: IT Staff/Admin Ticket Detail operations. The detail shape is
+// the same TicketDetail as the Requester's own getTicket() — see
+// server/src/services/ticket.service.ts's shared TICKET_DETAIL_SELECT.
+export function getStaffTicket(ticketId: number): Promise<TicketDetail> {
+  return request<TicketDetail>(`/api/staff/tickets/${ticketId}`);
+}
+
+// Omitting targetUserId claims for the caller themself (also used to
+// "reassign to me" — see specification.md §12).
+export function claimTicket(ticketId: number, targetUserId?: number): Promise<TicketDetail> {
+  return request<TicketDetail>(`/api/staff/tickets/${ticketId}/claim`, {
+    method: "PATCH",
+    body: targetUserId ? { targetUserId } : {},
+  });
+}
+
+export function setTicketPriority(ticketId: number, itPriority: Priority): Promise<TicketDetail> {
+  return request<TicketDetail>(`/api/staff/tickets/${ticketId}/priority`, { method: "PATCH", body: { itPriority } });
+}
+
+export function setTicketStatus(ticketId: number, status: TicketStatus): Promise<TicketDetail> {
+  return request<TicketDetail>(`/api/staff/tickets/${ticketId}/status`, { method: "PATCH", body: { status } });
 }
