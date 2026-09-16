@@ -5,10 +5,19 @@ import { defineConfig, devices } from "@playwright/test";
 // Runs against the real dev database (not the API test database) so
 // screenshots show a realistically populated app — specs must therefore be
 // self-contained and never assert a fixed row count (see requester-ticket-flow.spec.ts).
+// testDir is the shared `../e2e` root (not just one lab's folder) so a single
+// `npm run e2e` discovers both `lab-02/*.spec.ts` and `lab-03/*.spec.ts` —
+// required by specification.md §11's "all Lab 2 regression tests still pass."
 export default defineConfig({
-  testDir: "../e2e/lab-02",
-  outputDir: "../e2e/lab-02/.output",
+  testDir: "../e2e",
+  outputDir: "../e2e/.output",
   fullyParallel: false,
+  // Lab 3 added enough specs that running every project's workers
+  // concurrently against the single dev Postgres container intermittently
+  // saturated it (P1001 "Can't reach database server" — confirmed transient
+  // by re-running the failed project alone) — force one worker so the whole
+  // suite runs deterministically serially, trading speed for reliability.
+  workers: 1,
   retries: 0,
   reporter: [["html", { outputFolder: "playwright-report", open: "never" }], ["list"]],
   use: {

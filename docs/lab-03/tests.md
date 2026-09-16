@@ -45,9 +45,32 @@ re-run unchanged against the new authenticated flow).
 
 ## Test files
 `server/tests/lab-03/{auth,authorization,staff-queue,staff-ticket-detail,comments-notes,users-admin}.api.test.ts`,
+`server/tests/lab-03/{password,statusTransitions}.unit.test.ts`,
 `client/tests/lab-03/{Login,ChangePassword,StaffTicketQueue,StaffTicketDetail,UserManagement}.test.tsx`,
-`e2e/lab-03/{authentication,staff-ticket-flow,user-administration}.spec.ts`.
+`e2e/lab-03/{authentication,staff-ticket-flow,user-administration}.spec.ts` (plus the Lab 2 regression spec,
+`e2e/lab-02/requester-ticket-flow.spec.ts`, updated to authenticate via real login instead of the retired
+Development Requester selector — BR-29/AC-17 applies to the E2E level too, not just the API suite).
 
 ## Final status
-To be filled in once tests are written and run on `main` — do not report Pass before the exact command
-output has actually been captured.
+Captured on `feature/37-e2e-and-docs` (branched from `lab3-staging`) on 2026-09-17, from these exact commands:
+
+- `cd server && npm test` → **165/165 passed**, 16 files (14 Lab 3 files spanning API-01..17,
+  UNIT-01/UNIT-02 as their own standalone files, and REGR-01..N above, plus the unchanged Lab 1/Lab 2 suites)
+- `cd server && npm run typecheck` → clean
+- `cd client && npm test` → **54/54 passed**, 10 files (5 Lab 3 component files above, plus the unchanged
+  Lab 1/Lab 2 suites)
+- `cd client && npx tsc --noEmit` → clean
+- `cd client && npm run e2e` (`playwright.config.ts`, `workers: 1` — see the file's comment: running every
+  viewport project's worker concurrently against the single dev Postgres container intermittently hit
+  `P1001 Can't reach database server`, confirmed transient by re-running the failed project alone;
+  serializing eliminated it) → **18/18 passed** across desktop/tablet/mobile (E2E-01/02/03/04 above, plus
+  the 2 Lab 2 regression tests, each × 3 viewports); screenshots captured under
+  `artifacts/lab-03/screenshots/{authentication,staff-queue,staff-ticket-detail,user-management}/` and
+  `artifacts/lab-02/screenshots/{create-ticket,my-tickets,ticket-detail}/`
+
+UI-01..07 above are covered by the `client/tests/lab-03/*.test.tsx` files already counted in the 54; there
+are no separate UI-0N-numbered test files — each ID maps to one or more `it()` blocks within the listed
+files, not a 1:1 filename. UNIT-01 (`statusTransitions.unit.test.ts`) checks `staff.service.ts`'s exported
+`STATUS_TRANSITIONS` table against an independently-transcribed copy of specification.md §6, for every one
+of the 8×8 status pairs (65 cases, including the "CANCELLED is terminal" case). UNIT-02
+(`password.unit.test.ts`) round-trips `hashPassword`/`verifyPassword` with no database involved.

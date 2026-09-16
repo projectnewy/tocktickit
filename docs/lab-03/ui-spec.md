@@ -54,7 +54,16 @@ badge (role, status, priority). Internal Notes' visual distinction (background +
 alone) is itself an accessibility-relevant rule, not just a styling choice.
 
 ## Visual Inspection Checklist additions
-- Role badge next to user name in header, all screens
-- Public Comments vs Internal Notes visually distinct at a glance, all viewports
-- Login/Change Password forms usable and centered on mobile
-- Claim/Reassign/Status controls only rendered for IT Staff/Admin (verified by logging in as each role)
+Checked manually and via Playwright screenshots at each viewport, stored under
+`artifacts/lab-03/screenshots/`:
+- [x] Role badge next to user name in header, all screens (confirmed in every Lab 3 screenshot)
+- [x] Public Comments vs Internal Notes visually distinct at a glance, all viewports (white card vs.
+  pale-amber `#fdf6e3` card + "Staff only" badge — `staff-ticket-detail/*.png`)
+- [x] Login/Change Password forms usable and centered on mobile (`authentication/mobile.png`)
+- [x] Claim/Reassign/Status controls only rendered for IT Staff/Admin — verified both by `RoleGuard`
+  redirecting a Requester away from `/staff/tickets*` and `/admin/users` (manual browser check) and by
+  the header nav never rendering those links for a Requester session
+- [x] No clipping, overlap, or unintended horizontal scrolling at any viewport (asserted in every Lab 3
+  E2E spec via `scrollWidth === clientWidth`, in addition to visual screenshot review)
+- [x] User Management's table sits inside `.table-responsive` on mobile — the table itself scrolls
+  horizontally within its own container rather than the page overflowing (see `user-management/mobile.png`)
