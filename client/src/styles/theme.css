@@ -67,6 +67,15 @@ body {
   box-shadow: 0 0 0 0.25rem var(--bs-focus-ring-color);
 }
 
+/* Buttons had no visible keyboard-focus indicator at all (no rule targeted
+   :focus/:focus-visible on .btn) — Issue #49. Use the same green focus-ring
+   token as the form-control/form-select rule above, :focus-visible only so
+   it doesn't also show on a mouse click. */
+.btn:focus-visible {
+  box-shadow: 0 0 0 0.25rem var(--bs-focus-ring-color);
+  outline: none;
+}
+
 /* App shell */
 .tk-app-header {
   background-color: var(--tk-green-primary);
