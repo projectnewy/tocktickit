@@ -43,7 +43,20 @@ test("IT Staff claims a Requester's ticket, sets priority/status, posts a commen
 
     const staffContainer = testInfo.project.name === "desktop" ? staffPage.locator("table") : staffPage.locator(".d-lg-none");
     await staffContainer.getByText(uniqueSummary).click();
-    await expect(staffPage.getByText(uniqueSummary)).toBeVisible();
+    // Wait for the actual navigation to Ticket Detail before asserting the
+    // summary is visible there — without this, the Queue's own row (a <td>
+    // with the same text) can still be in the DOM under the new detail
+    // view's <p> right after the click, making getByText(uniqueSummary)
+    // match two elements (Playwright strict-mode violation).
+    await staffPage.waitForURL(/\/staff\/tickets\/\d+/);
+    // .first(): on tablet/mobile the Queue's own table markup (desktop
+    // layout) stays in the DOM behind the card list, just CSS-hidden via
+    // Bootstrap's d-none/d-lg-* classes rather than unmounted — the same
+    // dual-render property documented for the Queue/My Tickets tables
+    // (tests.md). That makes a bare getByText ambiguous regardless of which
+    // page is showing; .first() sidesteps it without weakening the check,
+    // since both matches contain the same real summary text.
+    await expect(staffPage.getByText(uniqueSummary).first()).toBeVisible();
 
     // --- Claim (New -> Open implicitly), set IT Priority, advance status ---
     await staffPage.getByRole("button", { name: /^claim$/i }).click();
