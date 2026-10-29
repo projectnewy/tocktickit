@@ -3,7 +3,7 @@ import { listCategories } from "../../api/reference.js";
 import type { Category } from "../../api/types.js";
 import type { StaffTicketListQuery } from "../../api/staff.js";
 
-const STATUS_OPTIONS = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"] as const;
+import { STATUS_VALUES, statusLabel } from "../../config/labels.js";
 
 interface StaffTicketFiltersProps {
   query: StaffTicketListQuery;
@@ -76,9 +76,9 @@ export function StaffTicketFilters({ query, onChange, onClear }: StaffTicketFilt
             onChange={(e) => onChange({ status: e.target.value ? [e.target.value] : undefined })}
           >
             <option value="">All Statuses</option>
-            {STATUS_OPTIONS.map((s) => (
+            {STATUS_VALUES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {statusLabel(s)}
               </option>
             ))}
           </select>

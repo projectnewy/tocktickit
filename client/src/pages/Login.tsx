@@ -3,16 +3,20 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.js";
 import { ApiError } from "../api/client.js";
 import { Alert } from "../components/ui/Alert.js";
+import { FormField } from "../components/ui/FormField.js";
 
 interface LocationState {
   from?: { pathname?: string };
 }
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -20,6 +24,15 @@ export default function Login() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // ui-spec.md §1/§6: required-field messages appear below each field.
+    const errors: { email?: string; password?: string } = {};
+    if (!email.trim()) errors.email = "Email is required.";
+    else if (!EMAIL_PATTERN.test(email.trim())) errors.email = "Enter a valid email address.";
+    if (!password) errors.password = "Password is required.";
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     setSubmitting(true);
     try {
       const user = await login(email, password);
@@ -44,10 +57,7 @@ export default function Login() {
         {error && <Alert variant="error">{error}</Alert>}
 
         <form onSubmit={handleSubmit} noValidate>
-          <div className="mb-3">
-            <label htmlFor="login-email" className="form-label fw-semibold">
-              Email <span className="text-danger">*</span>
-            </label>
+          <FormField id="login-email" label="Email" required error={fieldErrors.email}>
             <input
               id="login-email"
               type="email"
@@ -58,12 +68,9 @@ export default function Login() {
               autoComplete="username"
               disabled={submitting}
             />
-          </div>
+          </FormField>
 
-          <div className="mb-4">
-            <label htmlFor="login-password" className="form-label fw-semibold">
-              Password <span className="text-danger">*</span>
-            </label>
+          <FormField id="login-password" label="Password" required error={fieldErrors.password}>
             <input
               id="login-password"
               type="password"
@@ -74,9 +81,9 @@ export default function Login() {
               autoComplete="current-password"
               disabled={submitting}
             />
-          </div>
+          </FormField>
 
-          <button type="submit" className="btn btn-primary w-100" disabled={submitting}>
+          <button type="submit" className="btn btn-primary w-100 mt-2" disabled={submitting}>
             {submitting ? "Signing in…" : "Sign in"}
           </button>
         </form>

@@ -64,7 +64,7 @@ test("IT Staff claims a Requester's ticket, sets priority/status, posts a commen
     await staffPage.getByLabel(/it priority/i).selectOption("URGENT");
     await expect(staffPage.getByText(/it priority set to urgent/i)).toBeVisible();
     await staffPage.getByLabel(/^status$/i).selectOption("IN_PROGRESS");
-    await expect(staffPage.getByText(/status changed to in_progress/i)).toBeVisible();
+    await expect(staffPage.getByText(/status changed to in progress/i)).toBeVisible();
 
     // --- Post a Public Comment and an Internal Note ---
     await staffPage.getByLabel(/add a comment/i).fill(publicCommentText);

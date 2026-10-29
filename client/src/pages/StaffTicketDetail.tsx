@@ -5,6 +5,7 @@ import { ApiError } from "../api/client.js";
 import type { Priority, TicketDetail, TicketStatus } from "../api/types.js";
 import { PRIORITY_OPTIONS } from "../config.js";
 import { STATUS_TRANSITIONS } from "../config/statusTransitions.js";
+import { priorityLabel, statusLabel } from "../config/labels.js";
 import { StaffAttachmentsList } from "../components/staff/StaffAttachmentsList.js";
 import { CommentsSection } from "../components/comments/CommentsSection.js";
 import { InternalNotesSection } from "../components/notes/InternalNotesSection.js";
@@ -127,7 +128,7 @@ export default function StaffTicketDetail() {
     try {
       const updated = await setTicketPriority(ticket!.id, itPriority as Priority);
       setTicket(updated);
-      setActionSuccess(`IT Priority set to ${itPriority}.`);
+      setActionSuccess(`IT Priority set to ${priorityLabel(itPriority)}.`);
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : "Unable to update IT Priority. Please try again.");
     } finally {
@@ -142,7 +143,7 @@ export default function StaffTicketDetail() {
     try {
       const updated = await setTicketStatus(ticket!.id, status as TicketStatus);
       setTicket(updated);
-      setActionSuccess(`Status changed to ${status}.`);
+      setActionSuccess(`Status changed to ${statusLabel(status)}.`);
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : "Unable to update status. Please try again.");
     } finally {
@@ -222,7 +223,7 @@ export default function StaffTicketDetail() {
               )}
               {PRIORITY_OPTIONS.map((p) => (
                 <option key={p} value={p}>
-                  {p}
+                  {priorityLabel(p)}
                 </option>
               ))}
             </select>
@@ -246,7 +247,7 @@ export default function StaffTicketDetail() {
               </option>
               {statusOptions.map((s) => (
                 <option key={s} value={s}>
-                  {s}
+                  {statusLabel(s)}
                 </option>
               ))}
             </select>
