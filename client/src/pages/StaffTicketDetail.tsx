@@ -7,6 +7,7 @@ import { STATUS_TRANSITIONS } from "../config/statusTransitions.js";
 import { priorityLabel, statusLabel } from "../config/labels.js";
 import { describeWorkflowError, type WorkflowIssue } from "../config/workflowErrors.js";
 import { StaffAttachmentsList } from "../components/staff/StaffAttachmentsList.js";
+import { ActionsTakenSection } from "../components/actions/ActionsTakenSection.js";
 import { CommentsSection } from "../components/comments/CommentsSection.js";
 import { InternalNotesSection } from "../components/notes/InternalNotesSection.js";
 import { StatusBadge } from "../components/ui/StatusBadge.js";
@@ -308,6 +309,14 @@ export default function StaffTicketDetail() {
       </div>
 
       <StaffAttachmentsList attachments={ticket.attachments} />
+
+      <ActionsTakenSection
+        ticketId={ticket.id}
+        ticketStatus={ticket.status}
+        ticketVersion={ticket.version}
+        mode="staff"
+        assignees={assignees}
+      />
 
       <CommentsSection ticketId={ticket.id} />
 
