@@ -3,7 +3,7 @@
 **LLM/agent used:** Claude Code (Claude Sonnet 5.5), via the Claude desktop app's Code tab.
 
 This file is updated per Issue. Entries so far cover the Issue #53 review, Issue #54 (Actions Taken
-foundation) and Issue #55 (workflow and gate); later Issues append rows, and the reflection is completed in Issue #59.
+foundation), Issue #55 (workflow and gate) and Issue #56 (Actions Taken UI); later Issues append rows, and the reflection is completed in Issue #59.
 
 ## Selected key prompts
 
@@ -19,6 +19,8 @@ foundation) and Issue #55 (workflow and gate); later Issues append rows, and the
 | 8 | Implement Issue #55: version on every Ticket write, the resolution gate, matrix enforcement, cancel/reopen side effects, and the staff status control with stale-version and gate messages. | Tests first (25 failing), then the service. The gate and the action writes take the same row lock on the Ticket, so a resolve and a simultaneous "add Planned action" can never both succeed (WF-09 runs 12 rounds of that race). The Requester's indication now bumps `version` and is refused outside Open/In Progress/Waiting/Reopened; IT Staff get 403. Seven Lab 3 tests were changed on purpose (they now send `version`, and the indication test uses an Open Ticket), as decision 9 of the specification says. |
 | 9 | (Process finding) A scripted multi-file edit silently skipped three files. | The files use CRLF line endings, so the multi-line search strings did not match and the script printed "patched" anyway. The failing new tests exposed it; the script was rewritten to normalise line endings and to throw when a pattern is not found. |
 | 10 | Re-run Lab 2-3 E2E and add Ticket-workflow E2E specs. | Existing E2E 18/18; new `ticket-resolution.spec.ts` 9/9 (3 flows x 3 viewports). The second staff login used Olivia because the dev database's Carlos account rejected the documented seed password; the account was left untouched. Screenshots written to `artifacts/lab-04/screenshots/ticket-workflow/` and inspected at desktop and mobile. |
+| 11 | Implement Issue #56: the Actions Taken section, create/edit modal and read-only Requester view, with the E2E data. | Built on the shared Modal and `FormField` from #53. Design choices that came from the earlier lessons: Submit is disabled only while a request is in flight (never by invalid input, so the messages are reachable by a click); one `clientRequestId` per opened form, reused on retry; after a stale-version conflict the Reload button refreshes the version but keeps what the user typed; row buttons are a plain function, not a nested component, so keyboard focus survives re-renders (caught while reviewing my own first draft). 26 component tests (two failed first on test-side selector mistakes, fixed) plus `actions-taken-flow.spec.ts`. |
+| 12 | (Environment) The new E2E could not run: Docker Desktop's engine stopped mid-session. | The first run failed 9/9 with "Unexpected server error" at login, traced to the database being unreachable rather than a code fault. The agent relaunched Docker Desktop and waited about 25 minutes without success, then reported it; the author restarted it. Afterwards the new spec passed 9/9 and the whole E2E suite 36/36 (Labs 2-4, three viewports). Screenshots under `artifacts/lab-04/screenshots/actions-taken/` were opened and checked at desktop and mobile. |
 
 ## Reflection
 

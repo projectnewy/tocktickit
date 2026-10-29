@@ -60,13 +60,13 @@ status is `Pending` until the commands in "Final status" have been run and their
 | MIG-05 | Migration | AC-20, FR-15 | Run the demo seed twice | No duplicates; all statuses and 0/1/many actions present | `server/tests/lab-04/migration.test.ts` | Pass |
 | REGR-01..N | Regression | AC-23, FR-16 | Full Lab 1–3 API suites re-run (only `version` added to claim/priority/status calls) | All pass | `server/tests/lab-01..03/**` | Pending |
 | REGR-UI | Regression | AC-23 | Full Lab 1–3 component suites re-run | All pass | `client/tests/lab-01..03/**` | Pending |
-| UI-01 | UI | AC-01, FR-04 | Staff Ticket Detail Actions Taken list renders table/cards, empty state, ordering | Correct rows from mocked API | `client/tests/lab-04/ActionsTaken.test.tsx` | Pending |
-| UI-02 | UI | FR-01, BR-07 | Create modal: required fields, follow-up note appears/required, result required to complete | Messages below fields; no API call when invalid | `client/tests/lab-04/ActionsTaken.test.tsx` | Pending |
-| UI-03 | UI | BR-08, AC-06 | Assignee select lists only active staff; 422 shown inline | Correct options; inline error; data kept | `client/tests/lab-04/ActionsTaken.test.tsx` | Pending |
-| UI-04 | UI | BR-10 | Cancelled action read-only; Completed allows content fields (incl. date/time) but status/assignee read-only | Controls disabled/absent as specified | `client/tests/lab-04/ActionsTaken.test.tsx` | Pending |
-| UI-05 | UI | AC-04, BR-04 | Requester Ticket Detail shows all actions read-only | No add/edit/complete/cancel controls | `client/tests/lab-04/ActionsTaken.test.tsx` | Pending |
-| UI-06 | UI | AC-08 | 409 stale version on action save | "Changed by someone else" + Reload; data kept | `client/tests/lab-04/ActionsTaken.test.tsx` | Pending |
-| UI-07 | UI | AC-21, FR-19 | Double click Submit | One API call; button busy/disabled | `client/tests/lab-04/ActionsTaken.test.tsx` | Pending |
+| UI-01 | UI | AC-01, FR-04 | Staff Ticket Detail Actions Taken list renders table/cards, empty state, ordering | Correct rows from mocked API | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
+| UI-02 | UI | FR-01, BR-07 | Create modal: required fields, follow-up note appears/required, result required to complete | Messages below fields; no API call when invalid | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
+| UI-03 | UI | BR-08, AC-06 | Assignee select lists only active staff; 422 shown inline | Correct options; inline error; data kept | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
+| UI-04 | UI | BR-10 | Cancelled action read-only; Completed allows content fields (incl. date/time) but status/assignee read-only | Controls disabled/absent as specified | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
+| UI-05 | UI | AC-04, BR-04 | Requester Ticket Detail shows all actions read-only | No add/edit/complete/cancel controls | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
+| UI-06 | UI | AC-08 | 409 stale version on action save | "Changed by someone else" + Reload; data kept | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
+| UI-07 | UI | AC-21, FR-19 | Double click Submit | One API call; button busy/disabled | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
 | UI-08 | UI | FR-07, AC-10 | Status control offers only permitted transitions; gate error shown in plain language; success refreshes summary | As specified | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pass |
 | UI-09 | UI | AC-09 | 409 stale version on status/claim/priority | Message + "Reload ticket" | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pass |
 | UI-10 | UI | AC-02, AC-15 | Requester dashboard cards, lists, empty states, "Waiting for You" highlight with text/icon | Correct render from mocked API | `client/tests/lab-04/RequesterDashboard.test.tsx` | Pending |
@@ -81,14 +81,14 @@ status is `Pending` until the commands in "Final status" have been run and their
 | STYLE-04 | UI style | FR-18 | Login/Change Password show below-field messages | Messages below the field, associated by `aria-describedby` | `client/tests/lab-04/SharedUi.test.tsx` | Pending |
 | STYLE-05 | UI style | AC-24 | Focus-ring rule covers links, nav links, buttons, row/card buttons, modal close | Rule present for each selector | `client/tests/lab-04/SharedUi.test.tsx` | Pending |
 | RESP-01 | Responsive | AC-24 | Dashboards, Actions Taken, Ticket Detail, Users at 1280/768/375 | No horizontal page scroll; no clipping/overlap | `e2e/lab-04/dashboards.spec.ts`, `actions-taken-flow.spec.ts` | Pending |
-| E2E-01 | E2E | AC-01, FR-01..03 | Staff adds a Planned action for another staff, that staff completes it; Requester sees both read-only | Flow completes; different Performed By on one Ticket | `e2e/lab-04/actions-taken-flow.spec.ts` | Pending |
-| E2E-02 | E2E | AC-08, AC-21 | Two sessions edit one action; double-click Submit | Stale conflict shown; one row only | `e2e/lab-04/actions-taken-flow.spec.ts` | Pending |
+| E2E-01 | E2E | AC-01, FR-01..03 | Staff adds a Planned action for another staff, that staff completes it; Requester sees both read-only | Flow completes; different Performed By on one Ticket | `e2e/lab-04/actions-taken-flow.spec.ts` | Pass |
+| E2E-02 | E2E | AC-08, AC-21 | Two sessions edit one action; double-click Submit | Stale conflict shown; one row only | `e2e/lab-04/actions-taken-flow.spec.ts` | Pass |
 | E2E-03 | E2E | AC-10, AC-11, AC-12 | Requester indicates resolved; staff blocked by gate, completes work, resolves, closes; reopen | Gate message shown; lifecycle correct | `e2e/lab-04/ticket-resolution.spec.ts` | Partial: gate, resolve, close, reopen, advice Pass; work completed via API until the Actions screen (#56) |
 | E2E-04 | E2E | AC-13 | Cancel a Ticket with Planned actions | Actions become Cancelled | `e2e/lab-04/ticket-resolution.spec.ts` | Pass |
 | E2E-05 | E2E | AC-14, AC-16 | Dashboard card → drill-down list total equals the card count (both roles) | Equal | `e2e/lab-04/dashboards.spec.ts` | Pending |
 | E2E-06 | E2E | AC-18 | Login as each role lands on the right Dashboard with correct nav | As specified | `e2e/lab-04/dashboards.spec.ts` | Pending |
 | E2E-07 | E2E | AC-22 | Delete the session cookie mid-use, then act | Redirect to Login with message | `e2e/lab-04/dashboards.spec.ts` | Pending |
-| E2E-08 | E2E | AC-24 | Keyboard-only: open a Ticket from the table, open/close a modal, drill down from a card; focus visible | All operable | `e2e/lab-04/dashboards.spec.ts`, `actions-taken-flow.spec.ts` | Pending |
+| E2E-08 | E2E | AC-24 | Keyboard-only: open a Ticket from the table, open/close a modal, drill down from a card; focus visible | All operable | `e2e/lab-04/dashboards.spec.ts`, `actions-taken-flow.spec.ts` | Partial: Add Action dialog keyboard open, Tab trap, Escape, focus restore Pass; Ticket-table row and dashboard drill-down keyboard checks come with #57, #58 |
 | E2E-09 | E2E | AC-23 | Representative Lab 1–3 flows (login, My Tickets, Ticket Detail, Attachments, Comments, Notes, Queue, Users) | Still work | `e2e/lab-02/**`, `e2e/lab-03/**` re-run | Pending |
 
 ## Acceptance-Criterion Traceability

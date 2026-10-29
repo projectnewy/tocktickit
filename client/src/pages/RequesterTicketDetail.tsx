@@ -7,6 +7,7 @@ import type { TicketDetail } from "../api/types.js";
 import { priorityLabel } from "../config/labels.js";
 import { AttachmentSection } from "../components/attachments/AttachmentSection.js";
 import { CommentsSection } from "../components/comments/CommentsSection.js";
+import { ActionsTakenSection } from "../components/actions/ActionsTakenSection.js";
 import { StatusBadge } from "../components/ui/StatusBadge.js";
 import { PriorityBadge } from "../components/ui/PriorityBadge.js";
 import { Alert } from "../components/ui/Alert.js";
@@ -139,6 +140,8 @@ export default function RequesterTicketDetail() {
         attachments={ticket.attachments}
         onAttachmentsChange={(attachments) => setTicket({ ...ticket, attachments })}
       />
+
+      <ActionsTakenSection ticketId={ticket.id} ticketStatus={ticket.status} ticketVersion={ticket.version} mode="requester" />
 
       <CommentsSection ticketId={ticket.id} />
     </div>
