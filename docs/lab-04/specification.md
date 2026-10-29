@@ -89,18 +89,23 @@ Notes is free text describing which file to look for; real files stay on the Tic
 - **BR-09** `createdBy` is set automatically and never changes. `performedBy` is set automatically to the
   authenticated user who completes the action (or to the creator when created already Completed) and is empty
   until then. Clients cannot set either.
-- **BR-10** A Cancelled action is read-only. A Completed action's content (description, result, follow-up,
-  attachment notes) may still be corrected, but its status and assignee may not change.
+- **BR-10** A Cancelled action is read-only. A Completed action's content fields — description, result,
+  Action Date/Time, follow-up required, follow-up note, and attachment notes — may still be corrected (Action
+  Date/Time stays subject to the BR-07 no-future-date rule and the follow-up/result rules), but its status and
+  assignee may not change.
 - **BR-11** There is no delete endpoint; Actions Taken are append-only and are cancelled instead.
 - **BR-12** Actions Taken are always returned ordered by Action Date/Time ascending, then id ascending.
 - **BR-21** Create accepts an optional `clientRequestId`; a repeated create with the same id on the same
   Ticket returns the original Action Taken instead of making a second one.
 
 ### 5.2 Ownership and concurrency
-- **BR-19** Tickets and Actions Taken carry an integer `version` starting at 0. Every write to an existing row
-  (Ticket claim, priority, status, resolution indication; Action Taken update) must send the `version` it
-  last read; a mismatch returns 409 `STALE_VERSION` with the current version, and a successful write
-  increments it by 1. Creating an Action Taken does not change the Ticket's version.
+- **BR-19** Tickets and Actions Taken carry an integer `version` starting at 0. Every client write that
+  changes a workflow field of an existing row (Ticket claim, priority, status; Action Taken update) must send
+  the `version` it last read; a mismatch returns 409 `STALE_VERSION` with the current version, and a
+  successful write increments it by 1. The Requester's resolution indication is the one exception: it sends
+  no `version` (it only sets an advisory flag and cannot overwrite anyone's workflow change), but like every
+  write to a Ticket row it still increments the Ticket's `version`, so a staff member holding an older copy
+  gets the stale-version prompt. Creating an Action Taken does not change the Ticket's version.
 - **BR-20** Claiming a New Ticket still moves it to Open implicitly (Lab 3), and only active IT Staff or
   Administrator may own a Ticket (Lab 3 BR-14/15).
 
@@ -318,7 +323,9 @@ command output.
 8. **BR-34 (IT Priority default):** treated as a Lab 3 deviation fixed here, so "by IT Priority" is meaningful
    rather than mostly "Not set".
 9. **Lab 3 request contract change:** `version` becomes required on claim/priority/status; existing Lab 3 tests
-   are updated to send it. This is the only intentional change to an earlier API shape.
+   are updated to send it. This is the only intentional change to an earlier request shape — the resolution
+   indication keeps its Lab 3 shape (no body, no `version`, BR-19), though it increments the Ticket's version
+   and is now rejected with 409 outside the BR-15 statuses.
 10. **Landing and Requester-only screens:** `/` and post-login/post-password-change redirects use the role
     landing (BR-30). My Tickets, Create Ticket, and Requester Ticket Detail become Requester-only routes
     (IT Staff/Administrator are redirected to their Dashboard) — in Lab 3 they were reachable by any signed-in

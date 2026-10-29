@@ -61,7 +61,9 @@ Ticket returns the original action with 200).
 **PATCH body:** `version` (required) plus any subset of `description`, `result`, `actionDateTime`,
 `assigneeId`, `status`, `followUpRequired`, `followUpNote`, `attachmentNotes`. Rules: status may only go
 `PLANNED → COMPLETED` or `PLANNED → CANCELLED`; `assigneeId` changes only while `PLANNED`; a `CANCELLED`
-action accepts no changes; a `COMPLETED` action accepts content fields only. Completing sets `performedBy` to
+action accepts no changes; a `COMPLETED` action accepts content fields only (`description`, `result`,
+`actionDateTime`, `followUpRequired`, `followUpNote`, `attachmentNotes` — not `status` or `assigneeId`; the
+no-future-date rule still applies to `actionDateTime`). Completing sets `performedBy` to
 the caller.
 
 **Errors:** 400 invalid fields, missing `result`, missing `followUpNote` when follow-up is required, bad
@@ -76,7 +78,7 @@ the caller.
 | PATCH | `/api/staff/tickets/:id/claim` | Body `{ version, targetUserId? }`; 409 `STALE_VERSION` on mismatch |
 | PATCH | `/api/staff/tickets/:id/priority` | Body `{ version, itPriority }` |
 | PATCH | `/api/staff/tickets/:id/status` | Body `{ version, status }`; matrix + gate enforced |
-| POST | `/api/tickets/:id/resolution-indication` | 409 unless Ticket is Open/In Progress/Waiting/Reopened |
+| POST | `/api/tickets/:id/resolution-indication` | Unchanged request (no body, no `version`); 409 unless Ticket is Open/In Progress/Waiting/Reopened; increments the Ticket's `version` (BR-19) |
 | GET | `/api/staff/tickets/:id`, `/api/tickets/:id` | Response also includes `version` and `resolvedAt` |
 
 `status` errors: 409 `INVALID_TRANSITION` (pair not in the matrix), 409 `RESOLUTION_GATE`

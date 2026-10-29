@@ -30,11 +30,16 @@ Concise summary of the signed-in Requester's own Tickets only; it does not dupli
   (redirect to own Dashboard); safe failure banner with a Retry button — never a blank page or raw error.
 
 ## 3. IT Staff Dashboard (`/staff/dashboard`; Administrator reuses it)
-- Top row of count cards: **Unassigned**, **Owned by Me**, **My Planned Actions**.
+- Top row of count cards (two): **Unassigned** and **Owned by Me**, each a value, a label, and a "View" link.
 - **By Status** and **By IT Priority** panels: one row per active status / priority with a count and a bar or
   badge; each row is a link to the filtered Ticket Queue (zero counts still shown).
-- Lists (max 5 each): **Urgent Tickets**, **Recently Updated**, **My Planned Actions** (action description,
-  ticket number, date/time → Ticket Detail).
+- Lists (max 5 each): **Urgent Tickets** and **Recently Updated** (ticket number, summary, status badge, last
+  updated → Ticket Detail).
+- **My Planned Actions** is one combined card, not a count card plus a separate list: the card header shows
+  the label with the total count (from `myPlannedActions.count`), and the body lists up to 5 of the current
+  user's Planned actions (description, ticket number, date/time → Ticket Detail), earliest first. When the
+  count is 0 the body shows "No planned actions assigned to you." It sits in the lists grid with the other
+  lists, not in the top row.
 - Administrator additionally sees a compact **Users** card (active per role, inactive total) linking to Users.
 - Same loading/empty/forbidden/safe-failure behavior as §2. Responsive: panels stack to one column below
   992px; no horizontal page scroll.
@@ -51,7 +56,8 @@ Concise summary of the signed-in Requester's own Tickets only; it does not dupli
   required when the toggle is on), Attachment Notes. Performed By and Created By are display-only.
   Validation messages appear **below each field**; entered data is kept after a recoverable failure.
   Submit shows a busy state and is disabled while in flight (BR-21).
-- **View/edit modes:** a Cancelled action opens read-only; a Completed action allows content edits only;
+- **View/edit modes:** a Cancelled action opens read-only; a Completed action allows content edits only (description, result, date/time, follow-up, attachment notes;
+  status and assignee are read-only);
   Planned actions are fully editable. Completing/cancelling asks for confirmation in the modal.
 - **Feedback:** success banner after save; 409 stale-version shows "This action was changed by someone else"
   with a "Reload" action; ticket-not-actionable and gate messages are shown inline, never as a raw error.
