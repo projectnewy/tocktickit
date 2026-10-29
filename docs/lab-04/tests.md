@@ -53,10 +53,10 @@ status is `Pending` until the commands in "Final status" have been run and their
 | API-25 | API | BR-23 | Tickets just inside/outside the recent window | Included/excluded correctly | `server/tests/lab-04/requester-dashboard.api.test.ts` | Pending |
 | API-26 | API | FR-13 | `itPriority` filter and `updatedAt` sort on Staff Queue; `updatedAt` sort on My Tickets; invalid values | Works; invalid → 400 | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pending |
 | PERF-01 | Performance-smoke | BR-22 | Both dashboards with ≥300 Tickets and ≥600 actions | Responds < 1000 ms; payload lists capped at 5 | `server/tests/lab-04/dashboard-performance.api.test.ts` | Pending |
-| MIG-01 | Migration | AC-19, BR-32 | Apply the Lab 4 migration to a database holding Lab 3 data | Every User/Ticket/Attachment/Comment/Note row unchanged | `server/tests/lab-04/migration.test.ts` | Pending |
-| MIG-02 | Migration | AC-19, BR-18 | Backfill `resolvedAt` and `itPriority` | Resolved/Closed Tickets get `resolvedAt`; null priorities filled | `server/tests/lab-04/migration.test.ts` | Pending |
-| MIG-03 | Migration | BR-32 | Legacy Tickets without actions | List returns `[]`; dashboards count them normally | `server/tests/lab-04/migration.test.ts` | Pending |
-| MIG-04 | Migration | Spec §7 | Apply rollback script, re-apply migration | Earlier data intact; migration re-applies cleanly | `server/tests/lab-04/migration.test.ts` | Pending |
+| MIG-01 | Migration | AC-19, BR-32 | Apply the Lab 4 migration to a database holding Lab 3 data | Every User/Ticket/Attachment/Comment/Note row unchanged | `server/tests/lab-04/migration.test.ts` | Pass |
+| MIG-02 | Migration | AC-19, BR-18 | Backfill `resolvedAt` and `itPriority` | Resolved/Closed Tickets get `resolvedAt`; null priorities filled | `server/tests/lab-04/migration.test.ts` | Pass |
+| MIG-03 | Migration | BR-32 | Legacy Tickets without actions | List returns `[]`; dashboards count them normally | `server/tests/lab-04/migration.test.ts` | Pass |
+| MIG-04 | Migration | Spec §7 | Apply rollback script, re-apply migration | Earlier data intact; migration re-applies cleanly | `server/tests/lab-04/migration.test.ts` | Pass |
 | MIG-05 | Migration | AC-20, FR-15 | Run the demo seed twice | No duplicates; all statuses and 0/1/many actions present | `server/tests/lab-04/migration.test.ts` | Pending |
 | REGR-01..N | Regression | AC-23, FR-16 | Full Lab 1–3 API suites re-run (only `version` added to claim/priority/status calls) | All pass | `server/tests/lab-01..03/**` | Pending |
 | REGR-UI | Regression | AC-23 | Full Lab 1–3 component suites re-run | All pass | `client/tests/lab-01..03/**` | Pending |
