@@ -11,6 +11,7 @@ Updated per merged PR. Rows are added only for PRs that exist on GitHub.
 |----|--------|-------|------------------|
 | [#60](https://github.com/projectnewy/tocktickit/pull/60) | docs/lab4-spec | #52 | Changes requested, then approved and merged (@NinjoMUDA) |
 | [#61](https://github.com/projectnewy/tocktickit/pull/61) | feature/53-shared-ui-foundations | #53 | Approved and merged (@NinjoMUDA) |
+| [#63](https://github.com/projectnewy/tocktickit/pull/63) | feature/54-actions-taken-foundation | #54 | Awaiting review (@NinjoMUDA) |
 
 **Reviewer comments received:**
 
