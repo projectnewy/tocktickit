@@ -9,15 +9,22 @@ import * as ticketService from "../services/ticket.service.js";
 import * as attachmentService from "../services/attachment.service.js";
 import * as commentService from "../services/comment.service.js";
 import * as noteService from "../services/internalNote.service.js";
+import * as actionsService from "../services/actions.service.js";
+import { createActionSchema, updateActionSchema } from "../validation/action.schemas.js";
 import { uploadAttachment } from "../upload/multerUpload.js";
 
 const router = Router();
 router.use(authContext);
 
-function parseTicketId(param: string): number {
+// Upper bound is Postgres INTEGER: a larger number would otherwise reach the database and fail as a 500.
+function parseId(param: string, label: string): number {
   const id = Number(param);
-  if (!Number.isInteger(id) || id <= 0) throw new BadRequestError("Invalid ticket id");
+  if (!Number.isInteger(id) || id <= 0 || id > 2_147_483_647) throw new BadRequestError(`Invalid ${label}`);
   return id;
+}
+
+function parseTicketId(param: string): number {
+  return parseId(param, "ticket id");
 }
 
 router.post(
@@ -118,6 +125,44 @@ router.post(
     const { body } = createCommentSchema.parse(req.body);
     const note = await noteService.addNote(req.requesterId!, ticketId, body);
     res.status(201).json(note);
+  })
+);
+
+// BR-03: only IT Staff/Administrator write Actions Taken; checked before any lookup, same
+// allow-list approach as Internal Notes so it fails closed.
+function requireStaffForActions(req: Request) {
+  if (!req.userRole || !NOTE_ROLES.includes(req.userRole)) throw new ForbiddenError("Forbidden");
+}
+
+router.get(
+  "/:ticketId/actions",
+  asyncHandler(async (req, res) => {
+    const ticketId = parseTicketId(req.params.ticketId);
+    const actions = await actionsService.listActions(req.requesterId!, req.userRole!, ticketId);
+    res.status(200).json(actions);
+  })
+);
+
+router.post(
+  "/:ticketId/actions",
+  asyncHandler(async (req, res) => {
+    requireStaffForActions(req);
+    const ticketId = parseTicketId(req.params.ticketId);
+    const input = createActionSchema.parse(req.body);
+    const { action, created } = await actionsService.createAction(req.requesterId!, req.userRole!, ticketId, input);
+    res.status(created ? 201 : 200).json(action);
+  })
+);
+
+router.patch(
+  "/:ticketId/actions/:actionId",
+  asyncHandler(async (req, res) => {
+    requireStaffForActions(req);
+    const ticketId = parseTicketId(req.params.ticketId);
+    const actionId = parseId(req.params.actionId, "action id");
+    const input = updateActionSchema.parse(req.body);
+    const action = await actionsService.updateAction(req.requesterId!, req.userRole!, ticketId, actionId, input);
+    res.status(200).json(action);
   })
 );
 
