@@ -1,7 +1,7 @@
 import { Router, type Request } from "express";
 import type { Role } from "@prisma/client";
 import { asyncHandler } from "../http/asyncHandler.js";
-import { authContext } from "../http/authContext.js";
+import { authContext, requireRole } from "../http/authContext.js";
 import { BadRequestError, ForbiddenError } from "../http/errors.js";
 import { createTicketSchema, ticketQuerySchema } from "../validation/ticket.schemas.js";
 import { createCommentSchema } from "../validation/comment.schemas.js";
@@ -168,6 +168,7 @@ router.patch(
 
 router.post(
   "/:ticketId/resolution-indication",
+  requireRole("REQUESTER"), // api-spec authorization matrix: IT Staff and Administrator get 403
   asyncHandler(async (req, res) => {
     const ticketId = parseTicketId(req.params.ticketId);
     const ticket = await ticketService.indicateResolution(req.requesterId!, ticketId);

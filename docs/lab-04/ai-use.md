@@ -2,8 +2,8 @@
 
 **LLM/agent used:** Claude Code (Claude Sonnet 5.5), via the Claude desktop app's Code tab.
 
-This file is updated per Issue. Entries so far cover the Issue #53 review and Issue #54 (Actions Taken
-foundation); later Issues append rows, and the reflection is completed in Issue #59.
+This file is updated per Issue. Entries so far cover the Issue #53 review, Issue #54 (Actions Taken
+foundation) and Issue #55 (workflow and gate); later Issues append rows, and the reflection is completed in Issue #59.
 
 ## Selected key prompts
 
@@ -16,6 +16,9 @@ foundation); later Issues append rows, and the reflection is completed in Issue 
 | 5 | Implement the Actions Taken API from `api-spec.md`, tests first. | 36 API tests were written and run (31 failed), then the schema validation, service and routes made them pass. Decisions made while implementing: the `version` check sits in the `UPDATE ... WHERE` so simultaneous writers cannot both win; a unique-violation on `clientRequestId` falls back to returning the original row; only fields whose value actually changes are treated as edits, so a client can resend a whole object; business-rule 400s reuse the existing zod error shape so the client handles one format. |
 | 6 | Add the idempotent demo seed (FR-15). | Tickets in all 8 statuses and 4 priorities with 0/1/many actions; an MIG-05 test runs the seed twice and checks nothing is duplicated. It also caught that the older demo tickets left `itPriority` null, contradicting BR-34, so the seed now sets it. |
 | 7 | (AI overstep, recorded honestly) The agent opened a docs PR (#62) for the UI checklist table after a plan approval that did not say a PR would consume a number from the shared Issue/PR sequence. | The author objected: it broke the Issue/PR numbering for no sprint purpose. PR #62 was closed unmerged and its branch deleted; the checklist stayed in notes only. Rule applied from then on: do not create branches, PRs or Issues that were not asked for, and say up front when an action consumes a shared number. |
+| 8 | Implement Issue #55: version on every Ticket write, the resolution gate, matrix enforcement, cancel/reopen side effects, and the staff status control with stale-version and gate messages. | Tests first (25 failing), then the service. The gate and the action writes take the same row lock on the Ticket, so a resolve and a simultaneous "add Planned action" can never both succeed (WF-09 runs 12 rounds of that race). The Requester's indication now bumps `version` and is refused outside Open/In Progress/Waiting/Reopened; IT Staff get 403. Seven Lab 3 tests were changed on purpose (they now send `version`, and the indication test uses an Open Ticket), as decision 9 of the specification says. |
+| 9 | (Process finding) A scripted multi-file edit silently skipped three files. | The files use CRLF line endings, so the multi-line search strings did not match and the script printed "patched" anyway. The failing new tests exposed it; the script was rewritten to normalise line endings and to throw when a pattern is not found. |
+| 10 | Re-run Lab 2-3 E2E and add Ticket-workflow E2E specs. | Existing E2E 18/18; new `ticket-resolution.spec.ts` 9/9 (3 flows x 3 viewports). The second staff login used Olivia because the dev database's Carlos account rejected the documented seed password; the account was left untouched. Screenshots written to `artifacts/lab-04/screenshots/ticket-workflow/` and inspected at desktop and mobile. |
 
 ## Reflection
 

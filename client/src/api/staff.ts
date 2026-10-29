@@ -72,17 +72,17 @@ export function getStaffTicket(ticketId: number): Promise<TicketDetail> {
 
 // Omitting targetUserId claims for the caller themself (also used to
 // "reassign to me" — see specification.md §12).
-export function claimTicket(ticketId: number, targetUserId?: number): Promise<TicketDetail> {
+export function claimTicket(ticketId: number, version: number, targetUserId?: number): Promise<TicketDetail> {
   return request<TicketDetail>(`/api/staff/tickets/${ticketId}/claim`, {
     method: "PATCH",
-    body: targetUserId ? { targetUserId } : {},
+    body: targetUserId ? { version, targetUserId } : { version },
   });
 }
 
-export function setTicketPriority(ticketId: number, itPriority: Priority): Promise<TicketDetail> {
-  return request<TicketDetail>(`/api/staff/tickets/${ticketId}/priority`, { method: "PATCH", body: { itPriority } });
+export function setTicketPriority(ticketId: number, version: number, itPriority: Priority): Promise<TicketDetail> {
+  return request<TicketDetail>(`/api/staff/tickets/${ticketId}/priority`, { method: "PATCH", body: { version, itPriority } });
 }
 
-export function setTicketStatus(ticketId: number, status: TicketStatus): Promise<TicketDetail> {
-  return request<TicketDetail>(`/api/staff/tickets/${ticketId}/status`, { method: "PATCH", body: { status } });
+export function setTicketStatus(ticketId: number, version: number, status: TicketStatus): Promise<TicketDetail> {
+  return request<TicketDetail>(`/api/staff/tickets/${ticketId}/status`, { method: "PATCH", body: { version, status } });
 }

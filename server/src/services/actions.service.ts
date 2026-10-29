@@ -4,6 +4,7 @@ import { getPrisma } from "../prisma.js";
 import { AppError, NotFoundError, UnprocessableEntityError } from "../http/errors.js";
 import { canTransition, editableFieldsFor, normalizeFollowUp, validateActionFields, type ActionFieldErrors } from "./actionRules.js";
 import type { CreateActionInput, UpdateActionInput } from "../validation/action.schemas.js";
+import { lockTicket } from "./ticketLock.js";
 
 // BR-05: actions are created or changed only while the Ticket is being worked.
 const ACTIONABLE: TicketStatus[] = ["OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"];
@@ -118,22 +119,31 @@ export async function createAction(callerId: number, role: Role, ticketId: numbe
   await assertAssignable(assigneeId);
 
   try {
-    const action = await prisma.actionTaken.create({
-      data: {
-        ticketId,
-        createdById: callerId, // BR-09: never taken from the request
-        assigneeId,
-        // BR-09: the completer — here the creator, since the action is created already Completed.
-        performedById: status === "COMPLETED" ? callerId : null,
-        status,
-        actionDateTime: fields.actionDateTime,
-        description: fields.description.trim(),
-        result: trimmedOrNull(fields.result),
-        attachmentNotes: trimmedOrNull(fields.attachmentNotes),
-        clientRequestId: input.clientRequestId,
-        ...normalizeFollowUp(fields),
-      },
-      select: actionSelect,
+    const action = await prisma.$transaction(async (tx) => {
+      // BR-14: with the Ticket locked, re-read its status. A request that resolves the Ticket either
+      // finished before this point (so this is refused) or waits until this action is committed (so its
+      // gate sees it) — a Planned action can never slip in after the gate passed.
+      await lockTicket(tx, ticketId);
+      const fresh = await tx.ticket.findUniqueOrThrow({ where: { id: ticketId }, select: { status: true } });
+      if (!ACTIONABLE.includes(fresh.status)) notActionable();
+
+      return tx.actionTaken.create({
+        data: {
+          ticketId,
+          createdById: callerId, // BR-09: never taken from the request
+          assigneeId,
+          // BR-09: the completer — here the creator, since the action is created already Completed.
+          performedById: status === "COMPLETED" ? callerId : null,
+          status,
+          actionDateTime: fields.actionDateTime,
+          description: fields.description.trim(),
+          result: trimmedOrNull(fields.result),
+          attachmentNotes: trimmedOrNull(fields.attachmentNotes),
+          clientRequestId: input.clientRequestId,
+          ...normalizeFollowUp(fields),
+        },
+        select: actionSelect,
+      });
     });
     return { action, created: true };
   } catch (error) {
@@ -203,14 +213,23 @@ export async function updateAction(callerId: number, role: Role, ticketId: numbe
 
   // BR-19: the version in the WHERE makes the compare-and-bump atomic, so of several simultaneous
   // writers holding the same version exactly one succeeds.
-  const { count } = await prisma.actionTaken.updateMany({
-    where: { id: actionId, version: input.version },
-    data: {
-      ...next,
-      // BR-09: set to the caller on completion, never by the client.
-      ...(current.status !== "COMPLETED" && next.status === "COMPLETED" ? { performedById: callerId } : {}),
-      version: { increment: 1 },
-    },
+  const count = await prisma.$transaction(async (tx) => {
+    // Same lock as the resolution gate and action creation (see createAction): completing or cancelling
+    // an action cannot interleave with a request that resolves the Ticket.
+    await lockTicket(tx, ticketId);
+    const fresh = await tx.ticket.findUniqueOrThrow({ where: { id: ticketId }, select: { status: true } });
+    if (!ACTIONABLE.includes(fresh.status)) notActionable();
+
+    const { count } = await tx.actionTaken.updateMany({
+      where: { id: actionId, version: input.version },
+      data: {
+        ...next,
+        // BR-09: set to the caller on completion, never by the client.
+        ...(current.status !== "COMPLETED" && next.status === "COMPLETED" ? { performedById: callerId } : {}),
+        version: { increment: 1 },
+      },
+    });
+    return count;
   });
   if (count === 0) {
     const latest = await prisma.actionTaken.findUnique({ where: { id: actionId }, select: { version: true } });

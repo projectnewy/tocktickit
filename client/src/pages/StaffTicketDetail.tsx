@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getStaffTicket, claimTicket, setTicketPriority, setTicketStatus, listAssignees, type StaffAssignee } from "../api/staff.js";
-import { ApiError } from "../api/client.js";
 import type { Priority, TicketDetail, TicketStatus } from "../api/types.js";
 import { PRIORITY_OPTIONS } from "../config.js";
 import { STATUS_TRANSITIONS } from "../config/statusTransitions.js";
 import { priorityLabel, statusLabel } from "../config/labels.js";
+import { describeWorkflowError, type WorkflowIssue } from "../config/workflowErrors.js";
 import { StaffAttachmentsList } from "../components/staff/StaffAttachmentsList.js";
 import { CommentsSection } from "../components/comments/CommentsSection.js";
 import { InternalNotesSection } from "../components/notes/InternalNotesSection.js";
@@ -42,7 +42,8 @@ export default function StaffTicketDetail() {
   const [state, setState] = useState<LoadState>("loading");
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [assignees, setAssignees] = useState<StaffAssignee[]>([]);
-  const [actionError, setActionError] = useState("");
+  const [issue, setIssue] = useState<WorkflowIssue | null>(null);
+  const [reloading, setReloading] = useState(false);
   const [actionSuccess, setActionSuccess] = useState("");
   const [claiming, setClaiming] = useState(false);
   const [reassigning, setReassigning] = useState(false);
@@ -90,16 +91,31 @@ export default function StaffTicketDetail() {
   if (state === "loading") return <Spinner label="Loading ticket…" />;
   if (state === "error" || !ticket) return <Alert variant="error">Ticket not found.</Alert>;
 
+  // BR-19: after a stale-version 409 the user reloads the latest ticket (nothing they typed is lost —
+  // every control here is a single choice) and then repeats the change.
+  async function handleReload() {
+    setReloading(true);
+    try {
+      setTicket(await getStaffTicket(ticket!.id));
+      setIssue(null);
+      setActionSuccess("Ticket reloaded.");
+    } catch {
+      setIssue({ kind: "other", message: "Unable to reload this ticket. Please try again." });
+    } finally {
+      setReloading(false);
+    }
+  }
+
   async function handleClaim() {
-    setActionError("");
+    setIssue(null);
     setActionSuccess("");
     setClaiming(true);
     try {
-      const updated = await claimTicket(ticket!.id);
+      const updated = await claimTicket(ticket!.id, ticket!.version);
       setTicket(updated);
       setActionSuccess("Ticket claimed.");
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : "Unable to update ownership. Please try again.");
+      setIssue(describeWorkflowError(err, "Unable to update ownership. Please try again.", ticket!.status));
     } finally {
       setClaiming(false);
     }
@@ -107,45 +123,45 @@ export default function StaffTicketDetail() {
 
   async function handleReassign(targetUserId: string) {
     if (!targetUserId || Number(targetUserId) === ticket!.ticketOwner?.id) return;
-    setActionError("");
+    setIssue(null);
     setActionSuccess("");
     setReassigning(true);
     try {
-      const updated = await claimTicket(ticket!.id, Number(targetUserId));
+      const updated = await claimTicket(ticket!.id, ticket!.version, Number(targetUserId));
       setTicket(updated);
       setActionSuccess(`Reassigned to ${updated.ticketOwner?.fullName}.`);
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : "Unable to reassign this ticket. Please try again.");
+      setIssue(describeWorkflowError(err, "Unable to reassign this ticket. Please try again.", ticket!.status));
     } finally {
       setReassigning(false);
     }
   }
 
   async function handlePriorityChange(itPriority: string) {
-    setActionError("");
+    setIssue(null);
     setActionSuccess("");
     setSavingPriority(true);
     try {
-      const updated = await setTicketPriority(ticket!.id, itPriority as Priority);
+      const updated = await setTicketPriority(ticket!.id, ticket!.version, itPriority as Priority);
       setTicket(updated);
       setActionSuccess(`IT Priority set to ${priorityLabel(itPriority)}.`);
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : "Unable to update IT Priority. Please try again.");
+      setIssue(describeWorkflowError(err, "Unable to update IT Priority. Please try again.", ticket!.status));
     } finally {
       setSavingPriority(false);
     }
   }
 
   async function handleStatusChange(status: string) {
-    setActionError("");
+    setIssue(null);
     setActionSuccess("");
     setSavingStatus(true);
     try {
-      const updated = await setTicketStatus(ticket!.id, status as TicketStatus);
+      const updated = await setTicketStatus(ticket!.id, ticket!.version, status as TicketStatus);
       setTicket(updated);
       setActionSuccess(`Status changed to ${statusLabel(status)}.`);
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : "Unable to update status. Please try again.");
+      setIssue(describeWorkflowError(err, "Unable to update status. Please try again.", ticket!.status));
     } finally {
       setSavingStatus(false);
     }
@@ -257,13 +273,27 @@ export default function StaffTicketDetail() {
           <ReadOnlyField label="Description" value={ticket.description} full multiline />
         </div>
 
-        {actionError && (
+        {issue && (
           <div className="mt-3">
-            <Alert variant="error">{actionError}</Alert>
+            <Alert variant="error">
+              <div>{issue.message}</div>
+              {issue.reasons && issue.reasons.length > 0 && (
+                <ul className="mb-0 mt-1">
+                  {issue.reasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              )}
+              {issue.kind === "stale" && (
+                <button type="button" className="btn btn-sm btn-outline-danger mt-2" disabled={reloading} onClick={handleReload}>
+                  {reloading ? "Reloading…" : "Reload ticket"}
+                </button>
+              )}
+            </Alert>
           </div>
         )}
 
-        {!actionError && actionSuccess && (
+        {!issue && actionSuccess && (
           <div className="mt-3">
             <Alert variant="success">{actionSuccess}</Alert>
           </div>
@@ -271,7 +301,8 @@ export default function StaffTicketDetail() {
 
         {ticket.resolutionIndicated && (
           <div className="mt-3">
-            <span className="badge text-bg-success">Requester marked this problem as appearing resolved</span>
+            <span className="badge text-bg-success">Requester says the problem appears resolved</span>
+            <span className="ms-2 small text-secondary">Advisory only — resolve the ticket once the work is done.</span>
           </div>
         )}
       </div>

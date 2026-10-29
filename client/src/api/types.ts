@@ -67,6 +67,8 @@ export interface TicketDetail {
   itPriority: Priority | null;
   status: TicketStatus;
   resolutionIndicated: boolean;
+  version: number; // optimistic concurrency: sent back on every claim/priority/status change
+  resolvedAt: string | null;
   ticketDate: string;
   requester: { id: number; fullName: string };
   category: { id: number; name: string };

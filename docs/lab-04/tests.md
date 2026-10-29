@@ -16,8 +16,8 @@ status is `Pending` until the commands in "Final status" have been run and their
 |---|---|---|---|---|---|---|
 | UNIT-01 | Unit | BR-07, AC-05 | Action field rules: description length, result required when Completed, follow-up note required only when follow-up is true, future date rejected for Completed | Valid inputs pass; each violation reports the right field | `server/tests/lab-04/actionRules.unit.test.ts` | Pass |
 | UNIT-02 | Unit | BR-06, BR-10 | Action status transition table (all 9 pairs) | Only Planned→Completed/Cancelled allowed | `server/tests/lab-04/actionRules.unit.test.ts` | Pass |
-| UNIT-03 | Unit | BR-14, AC-10 | Resolution gate evaluator over (completed, planned) counts | Passes only with ≥1 completed and 0 planned; reports `unmet` reasons | `server/tests/lab-04/resolutionGate.unit.test.ts` | Pending |
-| UNIT-04 | Unit | BR-13 | Final status matrix, all 8×8 pairs vs an independent copy of the spec table | Only the 12 listed pairs allowed | `server/tests/lab-04/ticketTransitions.unit.test.ts` | Pending |
+| UNIT-03 | Unit | BR-14, AC-10 | Resolution gate evaluator over (completed, planned) counts | Passes only with ≥1 completed and 0 planned; reports `unmet` reasons | `server/tests/lab-04/resolutionGate.unit.test.ts` | Pass |
+| UNIT-04 | Unit | BR-13 | Final status matrix, all 8×8 pairs vs an independent copy of the spec table | Only the 12 listed pairs allowed | `server/tests/lab-04/ticketTransitions.unit.test.ts` | Pass |
 | UNIT-05 | Unit | BR-23 | Dashboard window: Bangkok day boundary, `windowStart` for several instants incl. 00:00/23:59 Bangkok and UTC rollover | Correct start; 7 inclusive days | `server/tests/lab-04/dashboardWindow.unit.test.ts` | Pending |
 | UNIT-06 | Unit | FR-18 | Label helpers for Status/Priority/Role | Every enum value maps to a friendly label; unknown value falls back safely | `client/tests/lab-04/labels.test.ts` | Pending |
 | API-01 | API | AC-01, BR-01 | Create valid Action Taken on an Open Ticket | 201; saved under the Ticket with authenticated `createdBy` and assignee | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
@@ -35,16 +35,16 @@ status is `Pending` until the commands in "Final status" have been run and their
 | AUTHZ-01 | Authorization | AC-03, BR-03 | Requester POST/PATCH action (own and other Tickets) | 403, nothing written | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
 | AUTHZ-02 | Authorization | FR-12, BR-30 | Unauthenticated and password-change-required calls to every new endpoint | 401 / 403 | `server/tests/lab-04/actions-taken.api.test.ts` | Partial: actions endpoints Pass; dashboards in #57, #58 |
 | AUTHZ-03 | Authorization | AC-17, BR-27 | Requester → staff dashboard; staff → Requester dashboard | 403 | `server/tests/lab-04/requester-dashboard.api.test.ts`, `staff-dashboard.api.test.ts` | Pending |
-| WF-01 | Workflow | AC-09, BR-19 | Two staff change status/owner/priority with the same Ticket version | Second gets 409 `STALE_VERSION`; nothing changes | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pending |
-| WF-02 | Workflow | AC-09 | Concurrent claim by two staff | Exactly one wins; the other gets 409 | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pending |
-| WF-03 | Workflow | AC-10, BR-14 | Resolve with no Completed action; with a Planned action; both | 409 `RESOLUTION_GATE` with correct `unmet`; status unchanged | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pending |
-| WF-04 | Workflow | AC-11, BR-18 | Resolve with ≥1 Completed and 0 Planned; then Close | Succeeds; `resolvedAt` set and kept | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pending |
-| WF-05 | Workflow | BR-13 | Every invalid transition via direct API (incl. Requester) | 409 `INVALID_TRANSITION` / 403; unchanged | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pending |
-| WF-06 | Workflow | AC-12, BR-15 | Requester indicates resolved (no body, no `version`); also on Resolved/Closed/Cancelled Tickets; a staff client holding the old version then writes | Only flag changes on allowed states and the Ticket `version` increments; 409 otherwise; status never changes; the stale staff write gets 409 `STALE_VERSION` | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pending |
-| WF-07 | Workflow | AC-13, BR-16 | Cancel a New/Open Ticket with Planned actions | Planned actions become Cancelled atomically | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pending |
-| WF-08 | Workflow | BR-17, BR-18 | Reopen from Resolved and from Closed | `resolvedAt` and `resolutionIndicated` cleared; Reopened | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pending |
-| WF-09 | Workflow | BR-14 | Gate under concurrency: add a Planned action while another request resolves | Never ends Resolved with a Planned action | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pending |
-| WF-10 | Workflow | BR-34 | New Ticket defaults `itPriority` to `requestedPriority` | Equal at creation | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pending |
+| WF-01 | Workflow | AC-09, BR-19 | Two staff change status/owner/priority with the same Ticket version | Second gets 409 `STALE_VERSION`; nothing changes | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-02 | Workflow | AC-09 | Concurrent claim by two staff | Exactly one wins; the other gets 409 | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-03 | Workflow | AC-10, BR-14 | Resolve with no Completed action; with a Planned action; both | 409 `RESOLUTION_GATE` with correct `unmet`; status unchanged | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-04 | Workflow | AC-11, BR-18 | Resolve with ≥1 Completed and 0 Planned; then Close | Succeeds; `resolvedAt` set and kept | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-05 | Workflow | BR-13 | Every invalid transition via direct API (incl. Requester) | 409 `INVALID_TRANSITION` / 403; unchanged | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-06 | Workflow | AC-12, BR-15 | Requester indicates resolved (no body, no `version`); also on Resolved/Closed/Cancelled Tickets; a staff client holding the old version then writes | Only flag changes on allowed states and the Ticket `version` increments; 409 otherwise; status never changes; the stale staff write gets 409 `STALE_VERSION` | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-07 | Workflow | AC-13, BR-16 | Cancel a New/Open Ticket with Planned actions | Planned actions become Cancelled atomically | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-08 | Workflow | BR-17, BR-18 | Reopen from Resolved and from Closed | `resolvedAt` and `resolutionIndicated` cleared; Reopened | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-09 | Workflow | BR-14 | Gate under concurrency: add a Planned action while another request resolves | Never ends Resolved with a Planned action | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-10 | Workflow | BR-34 | New Ticket defaults `itPriority` to `requestedPriority` | Equal at creation | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
 | API-20 | API | AC-02, BR-25 | Requester dashboard scoping with several Requesters' data | Only own metrics/lists | `server/tests/lab-04/requester-dashboard.api.test.ts` | Pending |
 | API-21 | API | AC-14, BR-26 | Staff dashboard metrics vs direct DB queries on a fixed dataset | Every count/list equals the DB result | `server/tests/lab-04/staff-dashboard.api.test.ts` | Pending |
 | API-22 | API | AC-15, BR-28 | Dashboards for a user/dataset with nothing | Counts 0, lists `[]`, never null/error | `server/tests/lab-04/requester-dashboard.api.test.ts`, `staff-dashboard.api.test.ts` | Pending |
@@ -67,8 +67,8 @@ status is `Pending` until the commands in "Final status" have been run and their
 | UI-05 | UI | AC-04, BR-04 | Requester Ticket Detail shows all actions read-only | No add/edit/complete/cancel controls | `client/tests/lab-04/ActionsTaken.test.tsx` | Pending |
 | UI-06 | UI | AC-08 | 409 stale version on action save | "Changed by someone else" + Reload; data kept | `client/tests/lab-04/ActionsTaken.test.tsx` | Pending |
 | UI-07 | UI | AC-21, FR-19 | Double click Submit | One API call; button busy/disabled | `client/tests/lab-04/ActionsTaken.test.tsx` | Pending |
-| UI-08 | UI | FR-07, AC-10 | Status control offers only permitted transitions; gate error shown in plain language; success refreshes summary | As specified | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pending |
-| UI-09 | UI | AC-09 | 409 stale version on status/claim/priority | Message + "Reload ticket" | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pending |
+| UI-08 | UI | FR-07, AC-10 | Status control offers only permitted transitions; gate error shown in plain language; success refreshes summary | As specified | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pass |
+| UI-09 | UI | AC-09 | 409 stale version on status/claim/priority | Message + "Reload ticket" | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pass |
 | UI-10 | UI | AC-02, AC-15 | Requester dashboard cards, lists, empty states, "Waiting for You" highlight with text/icon | Correct render from mocked API | `client/tests/lab-04/RequesterDashboard.test.tsx` | Pending |
 | UI-11 | UI | AC-14, AC-15 | Staff dashboard cards, status/priority panels, lists, combined "My Planned Actions" card (count header + up to 5 items + empty text), Administrator `userCounts` card | Correct render; card only for Admin | `client/tests/lab-04/StaffDashboard.test.tsx` | Pending |
 | UI-12 | UI | AC-18, FR-12, BR-30 | Navigation items and landing per role; active item indicated; wrong-role route redirects | As specified for all 3 roles | `client/tests/lab-04/RoleLanding.test.tsx` | Pending |
@@ -83,8 +83,8 @@ status is `Pending` until the commands in "Final status" have been run and their
 | RESP-01 | Responsive | AC-24 | Dashboards, Actions Taken, Ticket Detail, Users at 1280/768/375 | No horizontal page scroll; no clipping/overlap | `e2e/lab-04/dashboards.spec.ts`, `actions-taken-flow.spec.ts` | Pending |
 | E2E-01 | E2E | AC-01, FR-01..03 | Staff adds a Planned action for another staff, that staff completes it; Requester sees both read-only | Flow completes; different Performed By on one Ticket | `e2e/lab-04/actions-taken-flow.spec.ts` | Pending |
 | E2E-02 | E2E | AC-08, AC-21 | Two sessions edit one action; double-click Submit | Stale conflict shown; one row only | `e2e/lab-04/actions-taken-flow.spec.ts` | Pending |
-| E2E-03 | E2E | AC-10, AC-11, AC-12 | Requester indicates resolved; staff blocked by gate, completes work, resolves, closes; reopen | Gate message shown; lifecycle correct | `e2e/lab-04/ticket-resolution.spec.ts` | Pending |
-| E2E-04 | E2E | AC-13 | Cancel a Ticket with Planned actions | Actions become Cancelled | `e2e/lab-04/ticket-resolution.spec.ts` | Pending |
+| E2E-03 | E2E | AC-10, AC-11, AC-12 | Requester indicates resolved; staff blocked by gate, completes work, resolves, closes; reopen | Gate message shown; lifecycle correct | `e2e/lab-04/ticket-resolution.spec.ts` | Partial: gate, resolve, close, reopen, advice Pass; work completed via API until the Actions screen (#56) |
+| E2E-04 | E2E | AC-13 | Cancel a Ticket with Planned actions | Actions become Cancelled | `e2e/lab-04/ticket-resolution.spec.ts` | Pass |
 | E2E-05 | E2E | AC-14, AC-16 | Dashboard card → drill-down list total equals the card count (both roles) | Equal | `e2e/lab-04/dashboards.spec.ts` | Pending |
 | E2E-06 | E2E | AC-18 | Login as each role lands on the right Dashboard with correct nav | As specified | `e2e/lab-04/dashboards.spec.ts` | Pending |
 | E2E-07 | E2E | AC-22 | Delete the session cookie mid-use, then act | Redirect to Login with message | `e2e/lab-04/dashboards.spec.ts` | Pending |

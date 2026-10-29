@@ -1,7 +1,8 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, type TicketStatus } from "@prisma/client";
 import { getPrisma } from "../prisma.js";
 import { nextTicketNumber } from "./ticketNumber.js";
-import { BadRequestError, NotFoundError } from "../http/errors.js";
+import { BadRequestError, ConflictError, NotFoundError } from "../http/errors.js";
+import { lockTicket } from "./ticketLock.js";
 import type { CreateTicketInput, TicketQuery } from "../validation/ticket.schemas.js";
 
 export const TICKET_DETAIL_SELECT = {
@@ -13,6 +14,8 @@ export const TICKET_DETAIL_SELECT = {
   itPriority: true,
   status: true,
   resolutionIndicated: true,
+  version: true,
+  resolvedAt: true,
   createdAt: true,
   requester: { select: { id: true, fullName: true } },
   owner: { select: { id: true, fullName: true } },
@@ -63,6 +66,8 @@ export function serializeTicket(t: TicketDetailRow) {
     itPriority: t.itPriority,
     status: t.status,
     resolutionIndicated: t.resolutionIndicated,
+    version: t.version,
+    resolvedAt: t.resolvedAt,
     ticketDate: t.createdAt,
     requester: t.requester,
     category: t.category,
@@ -94,6 +99,7 @@ export async function createTicket(requesterId: number, input: CreateTicketInput
             summary: input.summary,
             description: input.description,
             requestedPriority: input.requestedPriority,
+            itPriority: input.requestedPriority, // BR-34: IT Priority starts as the requested one
             requesterId,
             categoryId: input.categoryId,
             relatedSystemId: input.relatedSystemId,
@@ -212,17 +218,26 @@ export async function getTicketById(requesterId: number, ticketId: number) {
   return serializeTicket(ticket);
 }
 
-// FR-07/BR-05: the Requester's own signal that the problem looks fixed. Does
-// not move the status transition matrix — only IT Staff/Administrator can
-// set Resolved/Closed (see comment.service.ts's authorization split).
-export async function indicateResolution(requesterId: number, ticketId: number) {
-  const existing = await getPrisma().ticket.findFirst({ where: { id: ticketId, requesterId } });
-  if (!existing) throw new NotFoundError("Ticket not found");
+// BR-15: the Requester's own advice that the problem looks fixed. It only sets an advisory flag — it never
+// changes the status and never satisfies the resolution gate. Accepted only while the Ticket is being
+// worked. Like every write to a Ticket row it bumps `version` (BR-19), so a staff member holding an older
+// copy gets the stale-version prompt; it takes no version itself because it overwrites nothing of theirs.
+const INDICATION_STATUSES: TicketStatus[] = ["OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "REOPENED"];
 
-  const ticket = await getPrisma().ticket.update({
-    where: { id: ticketId },
-    data: { resolutionIndicated: true },
-    select: TICKET_DETAIL_SELECT,
+export async function indicateResolution(requesterId: number, ticketId: number) {
+  return getPrisma().$transaction(async (tx) => {
+    await lockTicket(tx, ticketId);
+    const existing = await tx.ticket.findFirst({ where: { id: ticketId, requesterId } });
+    if (!existing) throw new NotFoundError("Ticket not found");
+    if (!INDICATION_STATUSES.includes(existing.status)) {
+      throw new ConflictError("The problem can only be marked as resolved while the Ticket is being worked");
+    }
+
+    const ticket = await tx.ticket.update({
+      where: { id: ticketId },
+      data: { resolutionIndicated: true, version: { increment: 1 } },
+      select: TICKET_DETAIL_SELECT,
+    });
+    return serializeTicket(ticket);
   });
-  return serializeTicket(ticket);
 }
