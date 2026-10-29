@@ -13,6 +13,7 @@ Updated per merged PR. Rows are added only for PRs that exist on GitHub.
 | [#61](https://github.com/projectnewy/tocktickit/pull/61) | feature/53-shared-ui-foundations | #53 | Approved and merged (@NinjoMUDA) |
 | [#63](https://github.com/projectnewy/tocktickit/pull/63) | feature/54-actions-taken-foundation | #54 | Approved and merged (@NinjoMUDA) |
 | [#64](https://github.com/projectnewy/tocktickit/pull/64) | feature/55-ticket-workflow-gate | #55 | Approved and merged (@NinjoMUDA) |
+| [#65](https://github.com/projectnewy/tocktickit/pull/65) | feature/56-actions-taken-ui | #56 | Awaiting review (@NinjoMUDA) |
 
 **Reviewer comments received:**
 
