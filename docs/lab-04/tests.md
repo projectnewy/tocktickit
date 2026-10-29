@@ -14,8 +14,8 @@ status is `Pending` until the commands in "Final status" have been run and their
 
 | ID | Type | Req / AC | What it tests | Expected result | Automated test file | Final |
 |---|---|---|---|---|---|---|
-| UNIT-01 | Unit | BR-07, AC-05 | Action field rules: description length, result required when Completed, follow-up note required only when follow-up is true, future date rejected for Completed | Valid inputs pass; each violation reports the right field | `server/tests/lab-04/actionRules.unit.test.ts` | Pending |
-| UNIT-02 | Unit | BR-06, BR-10 | Action status transition table (all 9 pairs) | Only Planned→Completed/Cancelled allowed | `server/tests/lab-04/actionRules.unit.test.ts` | Pending |
+| UNIT-01 | Unit | BR-07, AC-05 | Action field rules: description length, result required when Completed, follow-up note required only when follow-up is true, future date rejected for Completed | Valid inputs pass; each violation reports the right field | `server/tests/lab-04/actionRules.unit.test.ts` | Pass |
+| UNIT-02 | Unit | BR-06, BR-10 | Action status transition table (all 9 pairs) | Only Planned→Completed/Cancelled allowed | `server/tests/lab-04/actionRules.unit.test.ts` | Pass |
 | UNIT-03 | Unit | BR-14, AC-10 | Resolution gate evaluator over (completed, planned) counts | Passes only with ≥1 completed and 0 planned; reports `unmet` reasons | `server/tests/lab-04/resolutionGate.unit.test.ts` | Pending |
 | UNIT-04 | Unit | BR-13 | Final status matrix, all 8×8 pairs vs an independent copy of the spec table | Only the 12 listed pairs allowed | `server/tests/lab-04/ticketTransitions.unit.test.ts` | Pending |
 | UNIT-05 | Unit | BR-23 | Dashboard window: Bangkok day boundary, `windowStart` for several instants incl. 00:00/23:59 Bangkok and UTC rollover | Correct start; 7 inclusive days | `server/tests/lab-04/dashboardWindow.unit.test.ts` | Pending |
