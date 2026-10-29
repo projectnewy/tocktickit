@@ -33,6 +33,10 @@ const TICKET: TicketDetail = {
   itPriority: "MEDIUM",
   status: "NEW",
   resolutionIndicated: false,
+
+  version: 0,
+
+  resolvedAt: null,
   ticketDate: "2026-01-01T00:00:00.000Z",
   requester: { id: 1, fullName: "Jennifer Anderson" },
   category: { id: 2, name: "Network" },
@@ -87,7 +91,7 @@ describe("StaffTicketDetail", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /claim/i }));
 
-    await waitFor(() => expect(claimSpy).toHaveBeenCalledWith(42));
+    await waitFor(() => expect(claimSpy).toHaveBeenCalledWith(42, 0));
     expect(await screen.findByText(/ticket claimed/i)).toBeInTheDocument();
     // Now owned by the caller — the Claim button is replaced by the Reassign dropdown.
     expect(screen.queryByRole("button", { name: /claim/i })).not.toBeInTheDocument();
@@ -123,7 +127,7 @@ describe("StaffTicketDetail", () => {
 
     await userEvent.selectOptions(select, "2");
 
-    await waitFor(() => expect(claimSpy).toHaveBeenCalledWith(42, 2));
+    await waitFor(() => expect(claimSpy).toHaveBeenCalledWith(42, 0, 2));
     expect(await screen.findByText(/reassigned to priya natarajan/i)).toBeInTheDocument();
   });
 
@@ -136,7 +140,7 @@ describe("StaffTicketDetail", () => {
 
     await userEvent.selectOptions(screen.getByLabelText(/it priority/i), "URGENT");
 
-    await waitFor(() => expect(prioritySpy).toHaveBeenCalledWith(42, "URGENT"));
+    await waitFor(() => expect(prioritySpy).toHaveBeenCalledWith(42, 0, "URGENT"));
     // Friendly label, never the raw enum value (FR-18).
     expect(await screen.findByText("IT Priority set to Urgent.")).toBeInTheDocument();
   });
@@ -165,10 +169,11 @@ describe("StaffTicketDetail", () => {
     expect(optionValues.sort()).toEqual(["CANCELLED", "OPEN"]);
 
     const { ApiError } = await import("../../src/api/client.js");
-    vi.spyOn(staffApi, "setTicketStatus").mockRejectedValue(new ApiError(409, "Cannot transition from NEW to CANCELLED"));
+    vi.spyOn(staffApi, "setTicketStatus").mockRejectedValue(new ApiError(409, "Cannot transition from NEW to CANCELLED", { code: "INVALID_TRANSITION" }));
 
     await userEvent.selectOptions(statusSelect, "CANCELLED");
 
-    expect(await screen.findByText(/cannot transition/i)).toBeInTheDocument();
+    expect(await screen.findByText("That status change is not allowed while the ticket is New.")).toBeInTheDocument();
+    expect(screen.queryByText(/NEW|CANCELLED/)).not.toBeInTheDocument(); // never a raw enum value
   });
 });

@@ -1,6 +1,8 @@
 import { Prisma, type Priority, type TicketStatus } from "@prisma/client";
 import { getPrisma } from "../prisma.js";
-import { BadRequestError, ConflictError, NotFoundError } from "../http/errors.js";
+import { AppError, BadRequestError, NotFoundError } from "../http/errors.js";
+import { lockTicket } from "./ticketLock.js";
+import { evaluateResolutionGate } from "./resolutionGate.js";
 import { TICKET_DETAIL_SELECT, serializeTicket } from "./ticket.service.js";
 import type { StaffTicketQuery } from "../validation/staff.schemas.js";
 
@@ -110,45 +112,56 @@ export async function getTicketDetail(ticketId: number) {
   return serializeTicket(ticket);
 }
 
-// §6: New -> Open happens implicitly whenever a ticket is claimed from
-// unassigned — this is the only place the transition matrix is touched
-// outside setStatus(), per specification.md §6's "(implicit on claim)" note.
-export async function claimTicket(ticketId: number, callerId: number, targetUserId?: number) {
+// BR-19: every workflow write on a Ticket runs in one transaction with the Ticket row locked, compares
+// the `version` the client last read with the stored one, and bumps it. A mismatch is a safe 409 that
+// tells the client the current version, never a silent overwrite.
+function staleVersion(currentVersion: number): never {
+  throw new AppError(409, "This ticket was changed by someone else", "STALE_VERSION", { currentVersion });
+}
+
+async function loadForWrite(tx: Prisma.TransactionClient, ticketId: number, version: number) {
+  await lockTicket(tx, ticketId);
+  const existing = await tx.ticket.findUnique({ where: { id: ticketId } });
+  if (!existing) throw new NotFoundError("Ticket not found");
+  if (existing.version !== version) staleVersion(existing.version);
+  return existing;
+}
+
+// §5.3: New -> Open happens implicitly whenever a ticket is claimed from unassigned — this is the only
+// place the transition matrix is touched outside setStatus().
+export async function claimTicket(ticketId: number, callerId: number, version: number, targetUserId?: number) {
   const ownerId = targetUserId ?? callerId;
 
-  const [existing, owner] = await Promise.all([
-    getPrisma().ticket.findUnique({ where: { id: ticketId } }),
-    getPrisma().user.findFirst({ where: { id: ownerId, isActive: true, role: { in: ["IT_STAFF", "ADMINISTRATOR"] } } }),
-  ]);
-  if (!existing) throw new NotFoundError("Ticket not found");
-  if (!owner) throw new BadRequestError("Target user must be an active IT Staff or Administrator");
+  return getPrisma().$transaction(async (tx) => {
+    const existing = await loadForWrite(tx, ticketId, version);
+    const owner = await tx.user.findFirst({ where: { id: ownerId, isActive: true, role: { in: ["IT_STAFF", "ADMINISTRATOR"] } } });
+    if (!owner) throw new BadRequestError("Target user must be an active IT Staff or Administrator");
 
-  const ticket = await getPrisma().ticket.update({
-    where: { id: ticketId },
-    data: { ownerId, ...(existing.status === "NEW" ? { status: "OPEN" as TicketStatus } : {}) },
-    select: TICKET_DETAIL_SELECT,
+    const ticket = await tx.ticket.update({
+      where: { id: ticketId },
+      data: { ownerId, version: { increment: 1 }, ...(existing.status === "NEW" ? { status: "OPEN" as TicketStatus } : {}) },
+      select: TICKET_DETAIL_SELECT,
+    });
+    return serializeTicket(ticket);
   });
-  return serializeTicket(ticket);
 }
 
-// FR-11/BR-16: itPriority is independent of requestedPriority and only
-// changeable by IT Staff/Admin, after ticket creation.
-export async function setPriority(ticketId: number, itPriority: Priority) {
-  const existing = await getPrisma().ticket.findUnique({ where: { id: ticketId } });
-  if (!existing) throw new NotFoundError("Ticket not found");
-
-  const ticket = await getPrisma().ticket.update({
-    where: { id: ticketId },
-    data: { itPriority },
-    select: TICKET_DETAIL_SELECT,
+// FR-11/BR-16: itPriority is independent of requestedPriority and only changeable by IT Staff/Admin.
+export async function setPriority(ticketId: number, version: number, itPriority: Priority) {
+  return getPrisma().$transaction(async (tx) => {
+    await loadForWrite(tx, ticketId, version);
+    const ticket = await tx.ticket.update({
+      where: { id: ticketId },
+      data: { itPriority, version: { increment: 1 } },
+      select: TICKET_DETAIL_SELECT,
+    });
+    return serializeTicket(ticket);
   });
-  return serializeTicket(ticket);
 }
 
-// specification.md §6 — declared as "from status -> allowed next statuses";
-// any pair not listed here is rejected with 409 (BR-17/AC-07). Exported for
-// UNIT-01 (tests.md) — a direct table test, independent of the DB-backed
-// setStatus() below.
+// specification.md §5.3 — declared as "from status -> allowed next statuses"; any pair not listed here is
+// rejected with 409 INVALID_TRANSITION (BR-13). Exported for UNIT-04 (tests.md) — a direct table test,
+// independent of the DB-backed setStatus() below.
 export const STATUS_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
   NEW: ["OPEN", "CANCELLED"],
   OPEN: ["IN_PROGRESS", "CANCELLED"],
@@ -160,19 +173,44 @@ export const STATUS_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
   CANCELLED: [],
 };
 
-export async function setStatus(ticketId: number, status: TicketStatus) {
-  const existing = await getPrisma().ticket.findUnique({ where: { id: ticketId } });
-  if (!existing) throw new NotFoundError("Ticket not found");
+export async function setStatus(ticketId: number, version: number, status: TicketStatus) {
+  return getPrisma().$transaction(async (tx) => {
+    const existing = await loadForWrite(tx, ticketId, version);
 
-  const allowed = STATUS_TRANSITIONS[existing.status];
-  if (!allowed.includes(status)) {
-    throw new ConflictError(`Cannot transition from ${existing.status} to ${status}`);
-  }
+    if (!STATUS_TRANSITIONS[existing.status].includes(status)) {
+      throw new AppError(409, `Cannot transition from ${existing.status} to ${status}`, "INVALID_TRANSITION");
+    }
 
-  const ticket = await getPrisma().ticket.update({
-    where: { id: ticketId },
-    data: { status },
-    select: TICKET_DETAIL_SELECT,
+    const data: Prisma.TicketUpdateInput = { status, version: { increment: 1 } };
+
+    if (status === "RESOLVED") {
+      // BR-14: evaluated here, inside the transaction that holds the Ticket lock, so no action can be
+      // added or completed between this check and the status write.
+      const [completed, planned] = await Promise.all([
+        tx.actionTaken.count({ where: { ticketId, status: "COMPLETED" } }),
+        tx.actionTaken.count({ where: { ticketId, status: "PLANNED" } }),
+      ]);
+      const unmet = evaluateResolutionGate({ completed, planned });
+      if (unmet.length > 0) {
+        throw new AppError(409, "This ticket cannot be resolved yet", "RESOLUTION_GATE", { unmet });
+      }
+      data.resolvedAt = new Date(); // BR-18: kept through Closed
+    }
+
+    if (status === "REOPENED") {
+      data.resolvedAt = null; // BR-17/BR-18
+      data.resolutionIndicated = false;
+    }
+
+    if (status === "CANCELLED") {
+      // BR-16: cancelling a Ticket cancels its Planned actions in the same transaction.
+      await tx.actionTaken.updateMany({
+        where: { ticketId, status: "PLANNED" },
+        data: { status: "CANCELLED", version: { increment: 1 } },
+      });
+    }
+
+    const ticket = await tx.ticket.update({ where: { id: ticketId }, data, select: TICKET_DETAIL_SELECT });
+    return serializeTicket(ticket);
   });
-  return serializeTicket(ticket);
 }
