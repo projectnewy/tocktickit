@@ -20,20 +20,20 @@ status is `Pending` until the commands in "Final status" have been run and their
 | UNIT-04 | Unit | BR-13 | Final status matrix, all 8×8 pairs vs an independent copy of the spec table | Only the 12 listed pairs allowed | `server/tests/lab-04/ticketTransitions.unit.test.ts` | Pending |
 | UNIT-05 | Unit | BR-23 | Dashboard window: Bangkok day boundary, `windowStart` for several instants incl. 00:00/23:59 Bangkok and UTC rollover | Correct start; 7 inclusive days | `server/tests/lab-04/dashboardWindow.unit.test.ts` | Pending |
 | UNIT-06 | Unit | FR-18 | Label helpers for Status/Priority/Role | Every enum value maps to a friendly label; unknown value falls back safely | `client/tests/lab-04/labels.test.ts` | Pending |
-| API-01 | API | AC-01, BR-01 | Create valid Action Taken on an Open Ticket | 201; saved under the Ticket with authenticated `createdBy` and assignee | `server/tests/lab-04/actions-taken.api.test.ts` | Pending |
-| API-02 | API | BR-02, FR-06 | A non-owner IT Staff creates and completes an action on another staff member's Ticket | Succeeds; `performedBy` is the completer, Owner unchanged | `server/tests/lab-04/actions-taken.api.test.ts` | Pending |
-| API-03 | API | BR-09 | Client-supplied `createdBy`/`performedBy` ignored | Server-set values only | `server/tests/lab-04/actions-taken.api.test.ts` | Pending |
-| API-04 | API | AC-04, BR-04, BR-12 | List actions as owning Requester | All actions, all fields, ordered by date then id | `server/tests/lab-04/actions-taken.api.test.ts` | Pending |
-| API-05 | API | AC-04, BR-04 | List actions for another Requester's / nonexistent Ticket | Identical 404, no data | `server/tests/lab-04/actions-taken.api.test.ts` | Pending |
-| API-06 | API | AC-05, BR-07 | Missing result (Completed), missing follow-up note, bad lengths/dates | 400, nothing written | `server/tests/lab-04/actions-taken.api.test.ts` | Pending |
-| API-07 | API | AC-06, BR-08 | Inactive / Requester / nonexistent assignee on create and reassign | 422, nothing written | `server/tests/lab-04/actions-taken.api.test.ts` | Pending |
-| API-08 | API | AC-07, BR-05 | Create/update on New, Resolved, Closed, Cancelled Tickets | 409 `TICKET_NOT_ACTIONABLE` | `server/tests/lab-04/actions-taken.api.test.ts` | Pending |
-| API-09 | API | AC-08, BR-19 | Two clients update one action with the same version | Second gets 409 `STALE_VERSION`; first change preserved; version +1 | `server/tests/lab-04/actions-taken.api.test.ts` | Pending |
-| API-10 | API | AC-21, BR-21 | Same `clientRequestId` twice, and parallel creates | Exactly one row; second returns the original | `server/tests/lab-04/actions-taken.api.test.ts` | Pending |
-| API-11 | API | BR-06, BR-10 | Edit a Cancelled action; revert a Completed action; reassign a Completed action; edit a Completed action's content fields including `actionDateTime` (past ok, future rejected) | 409 `INVALID_ACTION_STATE` for status/assignee/Cancelled edits; content edits of Completed succeed | `server/tests/lab-04/actions-taken.api.test.ts` | Pending |
-| API-12 | API | BR-11 | DELETE on an action | 404/405, action unchanged | `server/tests/lab-04/actions-taken.api.test.ts` | Pending |
-| AUTHZ-01 | Authorization | AC-03, BR-03 | Requester POST/PATCH action (own and other Tickets) | 403, nothing written | `server/tests/lab-04/actions-taken.api.test.ts` | Pending |
-| AUTHZ-02 | Authorization | FR-12, BR-30 | Unauthenticated and password-change-required calls to every new endpoint | 401 / 403 | `server/tests/lab-04/actions-taken.api.test.ts` | Pending |
+| API-01 | API | AC-01, BR-01 | Create valid Action Taken on an Open Ticket | 201; saved under the Ticket with authenticated `createdBy` and assignee | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-02 | API | BR-02, FR-06 | A non-owner IT Staff creates and completes an action on another staff member's Ticket | Succeeds; `performedBy` is the completer, Owner unchanged | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-03 | API | BR-09 | Client-supplied `createdBy`/`performedBy` ignored | Server-set values only | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-04 | API | AC-04, BR-04, BR-12 | List actions as owning Requester | All actions, all fields, ordered by date then id | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-05 | API | AC-04, BR-04 | List actions for another Requester's / nonexistent Ticket | Identical 404, no data | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-06 | API | AC-05, BR-07 | Missing result (Completed), missing follow-up note, bad lengths/dates | 400, nothing written | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-07 | API | AC-06, BR-08 | Inactive / Requester / nonexistent assignee on create and reassign | 422, nothing written | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-08 | API | AC-07, BR-05 | Create/update on New, Resolved, Closed, Cancelled Tickets | 409 `TICKET_NOT_ACTIONABLE` | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-09 | API | AC-08, BR-19 | Two clients update one action with the same version | Second gets 409 `STALE_VERSION`; first change preserved; version +1 | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-10 | API | AC-21, BR-21 | Same `clientRequestId` twice, and parallel creates | Exactly one row; second returns the original | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-11 | API | BR-06, BR-10 | Edit a Cancelled action; revert a Completed action; reassign a Completed action; edit a Completed action's content fields including `actionDateTime` (past ok, future rejected) | 409 `INVALID_ACTION_STATE` for status/assignee/Cancelled edits; content edits of Completed succeed | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-12 | API | BR-11 | DELETE on an action | 404/405, action unchanged | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| AUTHZ-01 | Authorization | AC-03, BR-03 | Requester POST/PATCH action (own and other Tickets) | 403, nothing written | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| AUTHZ-02 | Authorization | FR-12, BR-30 | Unauthenticated and password-change-required calls to every new endpoint | 401 / 403 | `server/tests/lab-04/actions-taken.api.test.ts` | Partial: actions endpoints Pass; dashboards in #57, #58 |
 | AUTHZ-03 | Authorization | AC-17, BR-27 | Requester → staff dashboard; staff → Requester dashboard | 403 | `server/tests/lab-04/requester-dashboard.api.test.ts`, `staff-dashboard.api.test.ts` | Pending |
 | WF-01 | Workflow | AC-09, BR-19 | Two staff change status/owner/priority with the same Ticket version | Second gets 409 `STALE_VERSION`; nothing changes | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pending |
 | WF-02 | Workflow | AC-09 | Concurrent claim by two staff | Exactly one wins; the other gets 409 | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pending |
@@ -57,7 +57,7 @@ status is `Pending` until the commands in "Final status" have been run and their
 | MIG-02 | Migration | AC-19, BR-18 | Backfill `resolvedAt` and `itPriority` | Resolved/Closed Tickets get `resolvedAt`; null priorities filled | `server/tests/lab-04/migration.test.ts` | Pass |
 | MIG-03 | Migration | BR-32 | Legacy Tickets without actions | List returns `[]`; dashboards count them normally | `server/tests/lab-04/migration.test.ts` | Pass |
 | MIG-04 | Migration | Spec §7 | Apply rollback script, re-apply migration | Earlier data intact; migration re-applies cleanly | `server/tests/lab-04/migration.test.ts` | Pass |
-| MIG-05 | Migration | AC-20, FR-15 | Run the demo seed twice | No duplicates; all statuses and 0/1/many actions present | `server/tests/lab-04/migration.test.ts` | Pending |
+| MIG-05 | Migration | AC-20, FR-15 | Run the demo seed twice | No duplicates; all statuses and 0/1/many actions present | `server/tests/lab-04/migration.test.ts` | Pass |
 | REGR-01..N | Regression | AC-23, FR-16 | Full Lab 1–3 API suites re-run (only `version` added to claim/priority/status calls) | All pass | `server/tests/lab-01..03/**` | Pending |
 | REGR-UI | Regression | AC-23 | Full Lab 1–3 component suites re-run | All pass | `client/tests/lab-01..03/**` | Pending |
 | UI-01 | UI | AC-01, FR-04 | Staff Ticket Detail Actions Taken list renders table/cards, empty state, ordering | Correct rows from mocked API | `client/tests/lab-04/ActionsTaken.test.tsx` | Pending |

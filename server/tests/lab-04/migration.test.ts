@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { getPrisma } from "../../src/prisma.js";
+import { seedDemoTickets } from "../../src/db/seedData.js";
 import { resetDb } from "../helpers/db.js";
 import { makeAttachment, makeComment, makeInternalNote, makeItStaff, makeRequester, makeTicket } from "../helpers/factories.js";
 
@@ -194,5 +195,61 @@ describe("ActionTaken table constraints (specification.md §7)", () => {
     await expect(prisma.user.delete({ where: { id: staff.id } })).rejects.toThrow();
     await prisma.ticket.delete({ where: { id: ticket.id } });
     expect(await prisma.actionTaken.count()).toBe(0);
+  });
+});
+
+// MIG-05 (AC-20, FR-15): the demo seed is idempotent and covers every status/priority and
+// zero, one and many Actions Taken, giving both zero and non-zero dashboard metrics.
+describe("Demo seed (MIG-05)", () => {
+  let first: { tickets: number; actions: number };
+  let second: { tickets: number; actions: number };
+
+  const counts = async () => ({ tickets: await prisma.ticket.count(), actions: await prisma.actionTaken.count() });
+
+  beforeAll(async () => {
+    await resetDb();
+    await seedDemoTickets(prisma);
+    first = await counts();
+    await seedDemoTickets(prisma);
+    second = await counts();
+  });
+
+  it("running it twice creates no duplicates", () => {
+    expect(first.tickets).toBeGreaterThan(0);
+    expect(first.actions).toBeGreaterThan(0);
+    expect(second).toEqual(first);
+  });
+
+  it("covers all eight statuses and all four IT Priorities, owned and unassigned", async () => {
+    const tickets = await prisma.ticket.findMany({ select: { status: true, itPriority: true, ownerId: true } });
+    expect(new Set(tickets.map((t) => t.status))).toEqual(
+      new Set(["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"])
+    );
+    expect(new Set(tickets.map((t) => t.itPriority))).toEqual(new Set(["LOW", "MEDIUM", "HIGH", "URGENT"]));
+    expect(tickets.some((t) => t.ownerId === null)).toBe(true);
+    expect(tickets.some((t) => t.ownerId !== null)).toBe(true);
+  });
+
+  it("has Tickets with zero, one and many Actions Taken, including Planned ones for different staff", async () => {
+    const tickets = await prisma.ticket.findMany({ select: { _count: { select: { actions: true } } } });
+    const sizes = tickets.map((t) => t._count.actions);
+    expect(sizes).toContain(0);
+    expect(sizes).toContain(1);
+    expect(Math.max(...sizes)).toBeGreaterThanOrEqual(2);
+
+    const planned = await prisma.actionTaken.findMany({ where: { status: "PLANNED" }, select: { assigneeId: true } });
+    expect(new Set(planned.map((a) => a.assigneeId)).size).toBeGreaterThanOrEqual(2);
+    const statuses = new Set((await prisma.actionTaken.findMany({ select: { status: true } })).map((a) => a.status));
+    expect(statuses).toEqual(new Set(["PLANNED", "COMPLETED", "CANCELLED"]));
+  });
+
+  it("gives one Requester no Tickets at all and another waiting and resolved Tickets", async () => {
+    const sarah = await prisma.user.findUniqueOrThrow({ where: { email: "sarah.johnson@example.com" } });
+    expect(await prisma.ticket.count({ where: { requesterId: sarah.id } })).toBe(0);
+
+    const michael = await prisma.user.findUniqueOrThrow({ where: { email: "michael.brown@example.com" } });
+    const owned = await prisma.ticket.findMany({ where: { requesterId: michael.id }, select: { status: true, resolvedAt: true } });
+    expect(owned.some((t) => t.status === "WAITING_FOR_REQUESTER")).toBe(true);
+    expect(owned.some((t) => t.status === "RESOLVED" && t.resolvedAt !== null)).toBe(true);
   });
 });
