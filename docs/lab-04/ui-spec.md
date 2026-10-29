@@ -97,14 +97,39 @@ Checked in a real browser and via Playwright screenshots at desktop (1280), tabl
 for the Requester Dashboard, IT Staff Dashboard, and Actions Taken (both roles), stored under
 `artifacts/lab-04/screenshots/{requester-dashboard,staff-dashboard,actions-taken}/`. Every Lab 4 Issue copies
 this list into its PR and ticks it before review; the final status is recorded in Issue "Final hardening".
-- [ ] Zen Green design is consistent with Labs 2–3 (colors, badges, buttons, tables/cards, spacing)
-- [ ] Dashboard cards: label, value, accessible drill-down action; non-zero and zero states both shown
-- [ ] Actions Taken: editable vs read-only fields visually distinct; validation placed below the field
-- [ ] Private vs shared content is visually distinct (Internal Notes vs Public Comments unchanged)
-- [ ] Every interactive control is reachable by keyboard with a visible focus ring
-- [ ] Modals trap focus, close on Escape, and restore focus
-- [ ] Status, Priority, Role show friendly labels everywhere (no raw enum values) and never rely on color alone
-- [ ] No clipping, overlap, or horizontal page scroll at any viewport
-- [ ] Loading, empty/no-results, validation, success, forbidden, conflict, not-found, and safe-failure states
-- [ ] No console errors, broken links, placeholder text, or leftover/obsolete UI
-- [ ] Screenshots compared against this document, not memory
+
+**How to use this table.** Each Issue ticks only the rows listed under its number in the *Issue* column (and
+"every" rows for the screens it touches), copying those rows into its PR. Mark **Pass** only when the evidence
+in the *Evidence* column exists; leave the *Status* cell blank otherwise. **#59** re-verifies every row on
+`main` and records the final status. Rows G/R/S/A/W/X: Global, Requester Dashboard, Staff Dashboard, Actions
+Taken, Workflow, Cross-cutting. Source "L4 §n" = Lab 4 labsheet section.
+
+| # | Check | Source | Screen × viewport | Evidence | Issue | Status |
+|---|---|---|---|---|---|---|
+| G1 | Zen Green consistent with Labs 2–3 (colors, badges, buttons, tables/cards, spacing) | L4 §7 | all screens × 3 | screenshots | every; final #59 | |
+| G2 | Nav is role-aware, Dashboard first, current page not indicated by color alone | L4 §7, §1 above | 3 roles × 3 | screenshots, `aria-current` | #58; final #59 | |
+| G3 | No horizontal page scroll, clipping, or overlap | L4 §8.6, §7 | all screens × 3 | `scrollWidth === clientWidth` in E2E | every; final #59 | |
+| G4 | Every control keyboard-operable with visible focus ring (link, nav, button, row, modal close, input) | L4 §7 | all screens × desktop | E2E Tab/focus, screenshot | #53, then every | |
+| G5 | Modals: focus in, Escape closes, Tab trapped, focus restored | §6 above | Actions Taken modal | Vitest, E2E | #53, #56 | |
+| G6 | Status/Priority/Role use friendly labels, never raw enums, never color alone | §6 above | all screens × 3 | screenshots | #53, then every | |
+| G7 | Submit disabled only while in flight (not by validity); repeated click/retry creates no duplicates | L4 §8.5, BR-21 | Add/Edit Action, status change | E2E double-click | #55, #56 | |
+| G8 | Entered data kept after a recoverable failure | L4 §8.5 | Action modal, forms | Vitest | #53, #56 | |
+| G9 | No console errors, broken links, placeholder text, or obsolete UI (`/system` removed) | L4 §8.5 | all screens | console log, E2E | #59 | |
+| G10 | README, seed, migration, and test instructions match reality | L4 §8.5 | repo | follow README on `main` | #59 | |
+| R1 | Requester Dashboard: 4 cards with label, value, View link; own Tickets only | L4 §8.2, §2 above | `/dashboard` × 3 | `requester-dashboard/*.png` | #57 | |
+| R2 | Requester Dashboard: grid 4/2/1, loading, empty, forbidden, safe-failure with Retry | §2 above | `/dashboard` × 3 | screenshots per state | #57 | |
+| S1 | Staff Dashboard: Unassigned, Owned by Me, By Status, By IT Priority, Urgent, Recently Updated, My Planned Actions; rows link to the filtered Queue/Detail | L4 §8.1, §3 above | `/staff/dashboard` × 3 | `staff-dashboard/*.png` | #58 | |
+| S2 | Dashboard numbers match database queries, non-zero and zero | L4 Part 5 | `/staff/dashboard` | SQL result vs screenshot | #58 | |
+| S3 | Administrator sees extra Users card; wrong-role Dashboard redirects to own | §1, §3 above | Admin, Requester | screenshot, E2E redirect | #58 | |
+| S4 | Staff Dashboard panels stack to one column below 992px | §3 above | × 3 | screenshots | #58 | |
+| A1 | Actions Taken (staff): table on desktop, cards on mobile, ascending by date, Add Action | L4 §8.3, §4 above | Ticket Detail × 3 | `actions-taken/*.png` | #56 | |
+| A2 | Create/Edit modal: editable vs read-only distinct; validation below the field; conditional required Result and Follow-up Note | §4 above | modal × 3 | screenshots, valid and invalid | #56 | |
+| A3 | Assignee limited to active IT Staff/Admin; inactive assignee rejected with clear message | L4 Part 6 | modal | E2E, screenshot | #56 | |
+| A4 | Completed/Cancelled open in correct read-only mode; confirm before Complete/Cancel | §4 above | Ticket Detail | screenshots | #56 | |
+| A5 | Requester sees all Actions Taken fields, no buttons | L4 §8.3 | Requester Detail × 3 | screenshots | #56 | |
+| A6 | Empty, success, 409 stale (Reload), forbidden, not-found, safe-failure states | §4 above | Ticket Detail | screenshots | #56 | |
+| W1 | Status control shows only permitted transitions; blocked Resolve explains why in plain language | L4 §8.4, §5 above | Staff Ticket Detail | screenshots | #55 | |
+| W2 | Ticket summary refreshes after change; 409 offers "Reload ticket"; "Requester says resolved" notice is advisory | L4 §8.4, §5 above | Staff Ticket Detail | E2E | #55 | |
+| X1 | Private vs shared content distinct (Internal Notes vs Public Comments unchanged) | Lab 3 | Staff Ticket Detail | screenshots | #59 | |
+| X2 | Regression: Labs 1–3 still work (Login, My Tickets, Comments, Notes, Attachments, User Management) | L4 §8.5 | per screen | full E2E on `main` | #59 | |
+| X3 | Screenshots compared against this document, not memory | this doc | all screens | comparison note | #59 | |
