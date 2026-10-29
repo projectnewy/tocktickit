@@ -137,7 +137,22 @@ describe("StaffTicketDetail", () => {
     await userEvent.selectOptions(screen.getByLabelText(/it priority/i), "URGENT");
 
     await waitFor(() => expect(prioritySpy).toHaveBeenCalledWith(42, "URGENT"));
-    expect(await screen.findByText(/it priority set to urgent/i)).toBeInTheDocument();
+    // Friendly label, never the raw enum value (FR-18).
+    expect(await screen.findByText("IT Priority set to Urgent.")).toBeInTheDocument();
+  });
+
+  it("shows the status in friendly words in the options and the success message (FR-18)", async () => {
+    vi.spyOn(staffApi, "getStaffTicket").mockResolvedValue({ ...TICKET, status: "OPEN" });
+    vi.spyOn(staffApi, "setTicketStatus").mockResolvedValue({ ...TICKET, status: "IN_PROGRESS" });
+    renderDetail("/staff/tickets/42");
+    await screen.findByText("TKT-2026-000042");
+
+    const statusSelect = screen.getByLabelText(/^status$/i) as HTMLSelectElement;
+    expect(Array.from(statusSelect.options).map((o) => o.textContent)).toContain("In Progress");
+
+    await userEvent.selectOptions(statusSelect, "IN_PROGRESS");
+
+    expect(await screen.findByText("Status changed to In Progress.")).toBeInTheDocument();
   });
 
   it("only offers valid next statuses and shows a 409 error without changing the displayed status (BR-17, AC-07)", async () => {

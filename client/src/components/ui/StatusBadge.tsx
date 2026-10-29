@@ -1,15 +1,5 @@
 import type { TicketStatus } from "../../api/types.js";
-
-const LABELS: Record<TicketStatus, string> = {
-  NEW: "New",
-  OPEN: "Open",
-  IN_PROGRESS: "In Progress",
-  WAITING_FOR_REQUESTER: "Waiting for Requester",
-  RESOLVED: "Resolved",
-  CLOSED: "Closed",
-  REOPENED: "Reopened",
-  CANCELLED: "Cancelled",
-};
+import { statusLabel } from "../../config/labels.js";
 
 const CLASSES: Record<TicketStatus, string> = {
   NEW: "text-bg-primary",
@@ -23,5 +13,5 @@ const CLASSES: Record<TicketStatus, string> = {
 };
 
 export function StatusBadge({ status }: { status: TicketStatus }) {
-  return <span className={`badge ${CLASSES[status]}`}>{LABELS[status]}</span>;
+  return <span className={`badge ${CLASSES[status]}`}>{statusLabel(status)}</span>;
 }

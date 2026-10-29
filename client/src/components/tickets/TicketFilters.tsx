@@ -2,9 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { listCategories, listRelatedSystems } from "../../api/reference.js";
 import type { Category, RelatedSystem } from "../../api/types.js";
 import type { TicketListQuery } from "../../api/tickets.js";
-import { PRIORITY_OPTIONS } from "../../config.js";
-
-const STATUS_OPTIONS = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"] as const;
+import { PRIORITY_VALUES, STATUS_VALUES, priorityLabel, statusLabel } from "../../config/labels.js";
 
 interface TicketFiltersProps {
   query: TicketListQuery;
@@ -80,9 +78,9 @@ export function TicketFilters({ query, onChange, onClear }: TicketFiltersProps) 
             onChange={(e) => onChange({ requestedPriority: e.target.value ? [e.target.value] : undefined })}
           >
             <option value="">All Priorities</option>
-            {PRIORITY_OPTIONS.map((p) => (
+            {PRIORITY_VALUES.map((p) => (
               <option key={p} value={p}>
-                {p}
+                {priorityLabel(p)}
               </option>
             ))}
           </select>
@@ -98,9 +96,9 @@ export function TicketFilters({ query, onChange, onClear }: TicketFiltersProps) 
             onChange={(e) => onChange({ status: e.target.value ? [e.target.value] : undefined })}
           >
             <option value="">All Statuses</option>
-            {STATUS_OPTIONS.map((s) => (
+            {STATUS_VALUES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {statusLabel(s)}
               </option>
             ))}
           </select>

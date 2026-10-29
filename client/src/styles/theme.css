@@ -76,6 +76,59 @@ body {
   outline: none;
 }
 
+/* Every other interactive element gets the same visible green focus
+   indicator (docs/lab-04/ui-spec.md §6) — links, nav links, sortable header
+   buttons, activatable rows/cards, pagination, checkboxes, and the modal
+   close button. An outline (not just a box-shadow) so it also shows in
+   Windows high-contrast mode. */
+a:focus-visible,
+.tk-nav-link:focus-visible,
+.tk-sort-button:focus-visible,
+.page-link:focus-visible,
+.btn-close:focus-visible,
+.form-check-input:focus-visible,
+.tk-clickable-row:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 3px solid var(--tk-green-secondary);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* On the green app header the green ring would vanish — use white there. */
+.tk-app-header a:focus-visible,
+.tk-app-header .tk-nav-link:focus-visible,
+.tk-app-header .btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* Containers that receive programmatic focus only (the dialog fallback and
+   <main>, used by the skip link / focus restore) get no ring of their own. */
+.modal:focus-visible,
+main:focus-visible {
+  outline: none;
+}
+
+.tk-clickable-row {
+  cursor: pointer;
+}
+
+.tk-clickable-row:hover {
+  background-color: var(--tk-green-pale);
+}
+
+.tk-sort-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: inherit;
+}
+
 /* App shell */
 .tk-app-header {
   background-color: var(--tk-green-primary);
