@@ -13,7 +13,6 @@ import RequesterTicketDetail from "./pages/RequesterTicketDetail.js";
 import StaffTicketQueue from "./pages/StaffTicketQueue.js";
 import StaffTicketDetail from "./pages/StaffTicketDetail.js";
 import UserManagement from "./pages/UserManagement.js";
-import SystemCheck from "./pages/SystemCheck.js";
 import NotFound from "./pages/NotFound.js";
 export default function App() {
   return (
@@ -124,14 +123,6 @@ export default function App() {
                   </AppShell>
                 </RoleGuard>
               </AuthGuard>
-            }
-          />
-          <Route
-            path="/system"
-            element={
-              <AppShell>
-                <SystemCheck />
-              </AppShell>
             }
           />
           <Route path="*" element={<NotFound />} />

@@ -97,14 +97,14 @@ Checked in a real browser and via Playwright screenshots at desktop (1280), tabl
 for the Requester Dashboard, IT Staff Dashboard, and Actions Taken (both roles), stored under
 `artifacts/lab-04/screenshots/{requester-dashboard,staff-dashboard,actions-taken}/`. Every Lab 4 Issue copies
 this list into its PR and ticks it before review; the final status is recorded in Issue "Final hardening".
-- [ ] Zen Green design is consistent with Labs 2–3 (colors, badges, buttons, tables/cards, spacing)
-- [ ] Dashboard cards: label, value, accessible drill-down action; non-zero and zero states both shown
-- [ ] Actions Taken: editable vs read-only fields visually distinct; validation placed below the field
-- [ ] Private vs shared content is visually distinct (Internal Notes vs Public Comments unchanged)
-- [ ] Every interactive control is reachable by keyboard with a visible focus ring
-- [ ] Modals trap focus, close on Escape, and restore focus
-- [ ] Status, Priority, Role show friendly labels everywhere (no raw enum values) and never rely on color alone
-- [ ] No clipping, overlap, or horizontal page scroll at any viewport
-- [ ] Loading, empty/no-results, validation, success, forbidden, conflict, not-found, and safe-failure states
-- [ ] No console errors, broken links, placeholder text, or leftover/obsolete UI
-- [ ] Screenshots compared against this document, not memory
+- [x] Zen Green design is consistent with Labs 2–3 (colors, badges, buttons, tables/cards, spacing) — screenshots reviewed on every screen; two inherited gaps found and fixed (links and progress bars were Bootstrap blue)
+- [x] Dashboard cards: label, value, accessible drill-down action; non-zero and zero states both shown — `requester-dashboard/*.png` (data and `-empty`), `staff-dashboard/*.png` (IT Staff and `-admin`); every drill-down link replayed against the list in E2E (API-23, E2E-05)
+- [x] Actions Taken: editable vs read-only fields visually distinct; validation placed below the field — `actions-taken/*-modal-validation.png`, `*-modal-conflict.png`, `*-requester.png`; UI-02, UI-04, UI-05
+- [x] Private vs shared content is visually distinct (Internal Notes vs Public Comments unchanged) — amber "Staff only" card in every staff Ticket Detail screenshot; the Requester never sees it (Lab 3 E2E, re-run)
+- [x] Every interactive control is reachable by keyboard with a visible focus ring — `hardening.spec.ts` tabs through every screen of all three roles and fails on any focus stop without an outline or shadow
+- [x] Modals trap focus, close on Escape, and restore focus — STYLE-01 and the Add Action E2E (14 Tabs stay inside, Escape closes, focus returns to the opener)
+- [x] Status, Priority, Role show friendly labels everywhere (no raw enum values) and never rely on color alone — UNIT-06, STYLE-03, per-screen tests asserting no raw enum text; every badge carries a text label
+- [x] No clipping, overlap, or horizontal page scroll at any viewport — `hardening.spec.ts` asserts it on every screen at 1280, 768 and 375, plus the per-spec checks; screenshots opened and inspected
+- [x] Loading, empty/no-results, validation, success, forbidden, conflict, not-found, and safe-failure states — each screen's component tests; forbidden redirects, conflict (409 Reload) and Not Found also in E2E
+- [x] No console errors, broken links, placeholder text, or leftover/obsolete UI — `hardening.spec.ts` (all roles, all screens, internal links followed); the Lab 1 `/system` screen was removed; the signed-out page load no longer logs a 401
+- [x] Screenshots compared against this document, not memory — headings, card labels, table columns and field order were checked line by line against §2–§5 for the dashboards, Actions Taken and the workflow controls
