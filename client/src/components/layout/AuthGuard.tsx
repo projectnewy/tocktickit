@@ -43,11 +43,11 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 // Route-level enforcement of BR-20/FR-20 ("blocks direct URL access, not
 // just hidden nav links") — used on top of AuthGuard for screens restricted
 // to specific roles, e.g. the IT Staff Ticket Queue.
-export function RoleGuard({ allowed, children }: { allowed: Role[]; children: ReactNode }) {
+export function RoleGuard({ allowed, children, redirectTo = "/tickets" }: { allowed: Role[]; children: ReactNode; redirectTo?: string }) {
   const { user } = useAuth();
 
   if (user && !allowed.includes(user.role)) {
-    return <Navigate to="/tickets" replace />;
+    return <Navigate to={redirectTo} replace />;
   }
 
   return <>{children}</>;

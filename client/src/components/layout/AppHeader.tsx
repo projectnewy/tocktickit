@@ -19,6 +19,9 @@ export function AppHeader() {
         <nav className="d-flex gap-3" aria-label="Primary">
           {user?.role === "REQUESTER" && (
             <>
+              <NavLink to="/dashboard" className={navLinkClass} end>
+                Dashboard
+              </NavLink>
               <NavLink to="/tickets" className={navLinkClass} end>
                 My Tickets
               </NavLink>

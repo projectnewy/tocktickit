@@ -6,6 +6,7 @@ import Login from "./pages/Login.js";
 import ChangePassword from "./pages/ChangePassword.js";
 import CreateTicket from "./pages/CreateTicket.js";
 import MyTickets from "./pages/MyTickets.js";
+import RequesterDashboard from "./pages/RequesterDashboard.js";
 import RequesterTicketDetail from "./pages/RequesterTicketDetail.js";
 import StaffTicketQueue from "./pages/StaffTicketQueue.js";
 import StaffTicketDetail from "./pages/StaffTicketDetail.js";
@@ -25,6 +26,18 @@ export default function App() {
               <RequireAuth>
                 <ChangePassword />
               </RequireAuth>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <AuthGuard>
+                <RoleGuard allowed={["REQUESTER"]} redirectTo="/staff/tickets">
+                  <AppShell>
+                    <RequesterDashboard />
+                  </AppShell>
+                </RoleGuard>
+              </AuthGuard>
             }
           />
           <Route

@@ -129,6 +129,8 @@ const SORT_MAP: Record<string, Prisma.TicketOrderByWithRelationInput> = {
   "requestedPriority:asc": { requestedPriority: "asc" },
   "summary:asc": { summary: "asc" },
   "summary:desc": { summary: "desc" },
+  "updatedAt:desc": { updatedAt: "desc" },
+  "updatedAt:asc": { updatedAt: "asc" },
 };
 
 function endOfDay(date: Date): Date {

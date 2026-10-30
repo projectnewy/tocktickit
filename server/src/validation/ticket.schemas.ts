@@ -11,6 +11,8 @@ export const SORT_ALLOWLIST = [
   "requestedPriority:asc",
   "summary:asc",
   "summary:desc",
+  "updatedAt:desc",
+  "updatedAt:asc",
 ] as const;
 
 const STATUS_VALUES = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"] as const;
