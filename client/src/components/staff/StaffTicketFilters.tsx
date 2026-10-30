@@ -3,7 +3,11 @@ import { listCategories } from "../../api/reference.js";
 import type { Category } from "../../api/types.js";
 import type { StaffTicketListQuery } from "../../api/staff.js";
 
-import { STATUS_VALUES, statusLabel } from "../../config/labels.js";
+import { PRIORITY_VALUES, STATUS_VALUES, priorityLabel, statusLabel } from "../../config/labels.js";
+
+// Shown (disabled) when a Dashboard link opened the queue with several statuses at once, so the control
+// never claims a single status while the list shows more.
+const SEVERAL = "__several";
 
 interface StaffTicketFiltersProps {
   query: StaffTicketListQuery;
@@ -72,13 +76,41 @@ export function StaffTicketFilters({ query, onChange, onClear }: StaffTicketFilt
           <select
             id="staff-filter-status"
             className="form-select"
-            value={query.status?.[0] ?? ""}
+            value={(query.status?.length ?? 0) > 1 ? SEVERAL : query.status?.[0] ?? ""}
             onChange={(e) => onChange({ status: e.target.value ? [e.target.value] : undefined })}
           >
             <option value="">All Statuses</option>
+            {(query.status?.length ?? 0) > 1 && (
+              <option value={SEVERAL} disabled>
+                {query.status!.length} statuses selected
+              </option>
+            )}
             {STATUS_VALUES.map((s) => (
               <option key={s} value={s}>
                 {statusLabel(s)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="col-6 col-md-2">
+          <label htmlFor="staff-filter-priority" className="form-label small fw-semibold">
+            IT Priority
+          </label>
+          <select
+            id="staff-filter-priority"
+            className="form-select"
+            value={(query.itPriority?.length ?? 0) > 1 ? SEVERAL : query.itPriority?.[0] ?? ""}
+            onChange={(e) => onChange({ itPriority: e.target.value ? [e.target.value] : undefined })}
+          >
+            <option value="">All Priorities</option>
+            {(query.itPriority?.length ?? 0) > 1 && (
+              <option value={SEVERAL} disabled>
+                {query.itPriority!.length} priorities selected
+              </option>
+            )}
+            {PRIORITY_VALUES.map((p) => (
+              <option key={p} value={p}>
+                {priorityLabel(p)}
               </option>
             ))}
           </select>

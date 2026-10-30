@@ -4,6 +4,9 @@ import type { Category, RelatedSystem } from "../../api/types.js";
 import type { TicketListQuery } from "../../api/tickets.js";
 import { PRIORITY_VALUES, STATUS_VALUES, priorityLabel, statusLabel } from "../../config/labels.js";
 
+// Shown (disabled) when a Dashboard link opened the list with several statuses at once.
+const SEVERAL = "__several";
+
 interface TicketFiltersProps {
   query: TicketListQuery;
   onChange: (patch: Partial<TicketListQuery>) => void;
@@ -92,10 +95,15 @@ export function TicketFilters({ query, onChange, onClear }: TicketFiltersProps) 
           <select
             id="filter-status"
             className="form-select"
-            value={query.status?.[0] ?? ""}
+            value={(query.status?.length ?? 0) > 1 ? SEVERAL : query.status?.[0] ?? ""}
             onChange={(e) => onChange({ status: e.target.value ? [e.target.value] : undefined })}
           >
             <option value="">All Statuses</option>
+            {(query.status?.length ?? 0) > 1 && (
+              <option value={SEVERAL} disabled>
+                {query.status!.length} statuses selected
+              </option>
+            )}
             {STATUS_VALUES.map((s) => (
               <option key={s} value={s}>
                 {statusLabel(s)}

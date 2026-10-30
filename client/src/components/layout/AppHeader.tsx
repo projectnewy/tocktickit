@@ -31,9 +31,14 @@ export function AppHeader() {
             </>
           )}
           {isStaff && (
-            <NavLink to="/staff/tickets" className={navLinkClass}>
-              Ticket Queue
-            </NavLink>
+            <>
+              <NavLink to="/staff/dashboard" className={navLinkClass} end>
+                Dashboard
+              </NavLink>
+              <NavLink to="/staff/tickets" className={navLinkClass}>
+                Ticket Queue
+              </NavLink>
+            </>
           )}
           {user?.role === "ADMINISTRATOR" && (
             <NavLink to="/admin/users" className={navLinkClass}>

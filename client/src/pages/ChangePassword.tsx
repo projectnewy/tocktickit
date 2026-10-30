@@ -39,7 +39,7 @@ export default function ChangePassword() {
       // assuming it locally, so AuthGuard's redirect logic stays a single
       // source of truth.
       await refresh();
-      navigate("/tickets", { replace: true });
+      navigate("/", { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Unable to change password. Please try again.");
     } finally {

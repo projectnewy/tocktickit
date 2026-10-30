@@ -29,7 +29,7 @@ export function StaffTicketTable({ tickets, sort, onSortChange }: StaffTicketTab
           <SortableHeader label="IT Priority" field="itPriority" sort={sort} onSortChange={onSortChange} />
           <SortableHeader label="Status" field="status" sort={sort} onSortChange={onSortChange} />
           <th scope="col">Owner</th>
-          <SortableHeader label="Last Updated" field="createdAt" sort={sort} onSortChange={onSortChange} />
+          <SortableHeader label="Last Updated" field="updatedAt" sort={sort} onSortChange={onSortChange} />
         </tr>
       </thead>
       <tbody>

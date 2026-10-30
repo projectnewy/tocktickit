@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { getRequesterDashboard, type DashboardTicket, type RequesterDashboard as DashboardData } from "../api/dashboard.js";
 import { ApiError } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.js";
+import { landingPath } from "../config/landing.js";
 import { StatusBadge } from "../components/ui/StatusBadge.js";
 import { Alert } from "../components/ui/Alert.js";
 import { Spinner } from "../components/ui/Spinner.js";
@@ -93,6 +94,9 @@ export default function RequesterDashboard() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // A staff user who reaches this screen is sent to their own Dashboard (ui-spec.md §1).
+  if (state === "forbidden" && user && user.role !== "REQUESTER") return <Navigate to={landingPath(user.role)} replace />;
 
   return (
     <div>

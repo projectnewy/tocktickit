@@ -39,7 +39,7 @@ export default function Login() {
       const from = (location.state as LocationState | null)?.from?.pathname;
       // A fresh login always honors mustChangePassword via AuthGuard on the
       // next render — no special-case redirect needed here.
-      navigate(user.mustChangePassword ? "/change-password" : from || "/tickets", { replace: true });
+      navigate(user.mustChangePassword ? "/change-password" : from || "/", { replace: true });
     } catch (err) {
       // BR-06/BR-07: the API already returns one generic message for both
       // bad credentials and inactive accounts — just surface it as-is.

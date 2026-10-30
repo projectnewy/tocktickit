@@ -10,6 +10,8 @@ export const STAFF_SORT_ALLOWLIST = [
   "status:desc",
   "ticketNumber:asc",
   "ticketNumber:desc",
+  "updatedAt:desc",
+  "updatedAt:asc",
 ] as const;
 
 const STATUS_VALUES = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"] as const;
@@ -31,6 +33,8 @@ export const staffQuerySchema = z.object({
     .default(10),
   q: z.string().trim().max(100).optional(),
   status: z.preprocess(toArray, z.array(z.enum(STATUS_VALUES)).optional()),
+  // Repeated ?itPriority=URGENT&itPriority=HIGH; an unknown value is a 400, never ignored.
+  itPriority: z.preprocess(toArray, z.array(z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"])).optional()),
   categoryId: z.coerce.number().int().positive().optional(),
   ownerId: ownerIdSchema,
   sort: z.enum(STAFF_SORT_ALLOWLIST).default("createdAt:desc"),

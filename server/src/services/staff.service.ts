@@ -15,6 +15,8 @@ const SORT_MAP: Record<string, Prisma.TicketOrderByWithRelationInput> = {
   "status:desc": { status: "desc" },
   "ticketNumber:asc": { ticketNumber: "asc" },
   "ticketNumber:desc": { ticketNumber: "desc" },
+  "updatedAt:desc": { updatedAt: "desc" },
+  "updatedAt:asc": { updatedAt: "asc" },
 };
 
 // FR-08/§6.3: the shared Ticket Queue — every Ticket regardless of owner,
@@ -30,6 +32,7 @@ export async function listQueueTickets(callerId: number, query: StaffTicketQuery
 
   const where: Prisma.TicketWhereInput = {
     ...(query.status?.length ? { status: { in: query.status } } : {}),
+    ...(query.itPriority?.length ? { itPriority: { in: query.itPriority } } : {}),
     ...(query.categoryId ? { categoryId: query.categoryId } : {}),
     ...(query.ownerId !== undefined ? { ownerId: ownerFilter } : {}),
     ...(query.q

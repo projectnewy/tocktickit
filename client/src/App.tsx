@@ -7,6 +7,8 @@ import ChangePassword from "./pages/ChangePassword.js";
 import CreateTicket from "./pages/CreateTicket.js";
 import MyTickets from "./pages/MyTickets.js";
 import RequesterDashboard from "./pages/RequesterDashboard.js";
+import StaffDashboard from "./pages/StaffDashboard.js";
+import { LandingRedirect } from "./components/routing/LandingRedirect.js";
 import RequesterTicketDetail from "./pages/RequesterTicketDetail.js";
 import StaffTicketQueue from "./pages/StaffTicketQueue.js";
 import StaffTicketDetail from "./pages/StaffTicketDetail.js";
@@ -18,7 +20,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<Navigate to="/tickets" replace />} />
+          <Route path="/" element={<LandingRedirect />} />
           <Route path="/login" element={<Login />} />
           <Route
             path="/change-password"
@@ -32,9 +34,21 @@ export default function App() {
             path="/dashboard"
             element={
               <AuthGuard>
-                <RoleGuard allowed={["REQUESTER"]} redirectTo="/staff/tickets">
+                <RoleGuard allowed={["REQUESTER"]}>
                   <AppShell>
                     <RequesterDashboard />
+                  </AppShell>
+                </RoleGuard>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/staff/dashboard"
+            element={
+              <AuthGuard>
+                <RoleGuard allowed={["IT_STAFF", "ADMINISTRATOR"]}>
+                  <AppShell>
+                    <StaffDashboard />
                   </AppShell>
                 </RoleGuard>
               </AuthGuard>
@@ -44,9 +58,11 @@ export default function App() {
             path="/tickets"
             element={
               <AuthGuard>
-                <AppShell>
-                  <MyTickets />
-                </AppShell>
+                <RoleGuard allowed={["REQUESTER"]}>
+                  <AppShell>
+                    <MyTickets />
+                  </AppShell>
+                </RoleGuard>
               </AuthGuard>
             }
           />
@@ -54,9 +70,11 @@ export default function App() {
             path="/tickets/new"
             element={
               <AuthGuard>
-                <AppShell>
-                  <CreateTicket />
-                </AppShell>
+                <RoleGuard allowed={["REQUESTER"]}>
+                  <AppShell>
+                    <CreateTicket />
+                  </AppShell>
+                </RoleGuard>
               </AuthGuard>
             }
           />
@@ -64,9 +82,11 @@ export default function App() {
             path="/tickets/:ticketId"
             element={
               <AuthGuard>
-                <AppShell>
-                  <RequesterTicketDetail />
-                </AppShell>
+                <RoleGuard allowed={["REQUESTER"]}>
+                  <AppShell>
+                    <RequesterTicketDetail />
+                  </AppShell>
+                </RoleGuard>
               </AuthGuard>
             }
           />

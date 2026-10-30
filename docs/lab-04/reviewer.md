@@ -14,7 +14,7 @@ Updated per merged PR. Rows are added only for PRs that exist on GitHub.
 | [#63](https://github.com/projectnewy/tocktickit/pull/63) | feature/54-actions-taken-foundation | #54 | Approved and merged (@NinjoMUDA) |
 | [#64](https://github.com/projectnewy/tocktickit/pull/64) | feature/55-ticket-workflow-gate | #55 | Approved and merged (@NinjoMUDA) |
 | [#65](https://github.com/projectnewy/tocktickit/pull/65) | feature/56-actions-taken-ui | #56 | Approved and merged (@NinjoMUDA) |
-| [#66](https://github.com/projectnewy/tocktickit/pull/66) | feature/57-requester-dashboard | #57 | Awaiting review (@NinjoMUDA) |
+| [#66](https://github.com/projectnewy/tocktickit/pull/66) | feature/57-requester-dashboard | #57 | Approved and merged (@NinjoMUDA) |
 
 **Reviewer comments received:**
 
@@ -25,6 +25,7 @@ Updated per merged PR. Rows are added only for PRs that exist on GitHub.
 | #63 | Approved: "Outstanding backend foundation for Actions Taken. The additive migration with backfill and tested rollback script, atomic version concurrency check, idempotent clientRequestId handling ... Ready to merge into lab4-staging." No changes requested. |
 | #64 | Approved with a written verification summary: concurrency lock (BR-19, WF-09), the 12-pair matrix, the gate, side effects (BR-15..18, BR-34), friendly error messages and the Reload button, the test counts and screenshots. No changes requested. |
 | #65 | Approved with a written verification summary covering the responsive table/cards, field-level validation and accessibility links, the stale-version reload, the Requester read-only view, and the test and screenshot evidence. No changes requested. |
+| #66 | Approved with a written verification summary covering the Bangkok window, ownership scoping, the drill-down checks, the Requester Dashboard screen, and the test evidence. No changes requested. |
 
 **How I responded:** on #60 all four points were fixed on the same branch (commit `ed96720`, no new PR) and
 replied to in the PR thread before the second review. #61 needed no changes.
