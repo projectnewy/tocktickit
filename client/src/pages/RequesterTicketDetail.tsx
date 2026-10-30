@@ -4,8 +4,10 @@ import { getTicket } from "../api/tickets.js";
 import { indicateResolution } from "../api/comments.js";
 import { ApiError } from "../api/client.js";
 import type { TicketDetail } from "../api/types.js";
+import { priorityLabel } from "../config/labels.js";
 import { AttachmentSection } from "../components/attachments/AttachmentSection.js";
 import { CommentsSection } from "../components/comments/CommentsSection.js";
+import { ActionsTakenSection } from "../components/actions/ActionsTakenSection.js";
 import { StatusBadge } from "../components/ui/StatusBadge.js";
 import { PriorityBadge } from "../components/ui/PriorityBadge.js";
 import { Alert } from "../components/ui/Alert.js";
@@ -105,7 +107,7 @@ export default function RequesterTicketDetail() {
           <ReadOnlyField label="Category" value={ticket.category.name} />
           <ReadOnlyField label="Related System" value={ticket.relatedSystem.name} />
           <ReadOnlyField label="Requester" value={ticket.requester.fullName} />
-          <ReadOnlyField label="IT Priority" value={ticket.itPriority ?? "—"} />
+          <ReadOnlyField label="IT Priority" value={ticket.itPriority ? priorityLabel(ticket.itPriority) : "—"} />
           <ReadOnlyField label="Ticket Owner" value={ticket.ticketOwner?.fullName ?? "Unassigned"} />
           <ReadOnlyField label="Summary" value={ticket.summary} full />
           <ReadOnlyField label="Description" value={ticket.description} full multiline />
@@ -138,6 +140,8 @@ export default function RequesterTicketDetail() {
         attachments={ticket.attachments}
         onAttachmentsChange={(attachments) => setTicket({ ...ticket, attachments })}
       />
+
+      <ActionsTakenSection ticketId={ticket.id} ticketStatus={ticket.status} ticketVersion={ticket.version} mode="requester" />
 
       <CommentsSection ticketId={ticket.id} />
     </div>

@@ -3,7 +3,7 @@ import { asyncHandler } from "../http/asyncHandler.js";
 import { identifyUser } from "../http/authContext.js";
 import { loginSchema, changePasswordSchema } from "../validation/auth.schemas.js";
 import * as authService from "../services/auth.service.js";
-import { SESSION_COOKIE, sessionCookieOptions } from "../auth/token.js";
+import { SESSION_COOKIE, sessionCookieOptions, verifySession } from "../auth/token.js";
 
 const router = Router();
 
@@ -25,6 +25,18 @@ router.post("/logout", (_req, res) => {
   res.clearCookie(SESSION_COOKIE, clearOptions);
   res.status(204).end();
 });
+
+// Asked on every page load. A visitor with no valid session gets 200 {"user":null} rather than a 401, so the
+// browser does not log a failed request for the normal signed-out case. /me keeps its Lab 3 contract (401).
+router.get(
+  "/session",
+  asyncHandler(async (req, res) => {
+    const token = req.cookies?.[SESSION_COOKIE];
+    const payload = token ? verifySession(token) : null;
+    const user = payload ? await authService.findActiveUser(payload.userId) : null;
+    res.status(200).json({ user });
+  })
+);
 
 router.get(
   "/me",

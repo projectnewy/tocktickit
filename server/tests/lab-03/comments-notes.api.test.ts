@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { resetDb } from "../helpers/db.js";
+import { getPrisma } from "../../src/prisma.js";
 import { makeUser, makeItStaff, makeAdministrator, makeTicket } from "../helpers/factories.js";
 import { cookieFor } from "../helpers/auth.js";
 
@@ -64,6 +65,7 @@ describe("POST /api/tickets/:id/resolution-indication (FR-07, BR-05)", () => {
   it("sets resolutionIndicated without changing the formal status", async () => {
     const owner = await makeUser({ role: "REQUESTER" });
     const ticket = await makeTicket({ requesterId: owner.id });
+    await getPrisma().ticket.update({ where: { id: ticket.id }, data: { status: "OPEN" } }); // Lab 4 BR-15: the indication needs a Ticket being worked
 
     const res = await request(app)
       .post(`/api/tickets/${ticket.id}/resolution-indication`)
@@ -71,7 +73,7 @@ describe("POST /api/tickets/:id/resolution-indication (FR-07, BR-05)", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.resolutionIndicated).toBe(true);
-    expect(res.body.status).toBe("NEW"); // unchanged — only IT Staff/Admin move status (BR-18)
+    expect(res.body.status).toBe("OPEN"); // unchanged — only IT Staff/Admin move status (BR-18)
   });
 
   it("rejects indicating resolution on a ticket the caller does not own", async () => {

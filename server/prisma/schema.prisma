@@ -38,6 +38,14 @@ enum Role {
   ADMINISTRATOR
 }
 
+// Lab 4: Actions Taken lifecycle. Only PLANNED -> COMPLETED and PLANNED -> CANCELLED are
+// allowed (specification.md BR-06); the rule lives in code, the enum keeps the column valid.
+enum ActionStatus {
+  PLANNED
+  COMPLETED
+  CANCELLED
+}
+
 model Category {
   id        Int      @id @default(autoincrement())
   name      String   @unique
@@ -76,6 +84,9 @@ model User {
   removedAttachments  Attachment[]   @relation("AttachmentRemover")
   comments            Comment[]
   internalNotes       InternalNote[]
+  createdActions      ActionTaken[]  @relation("ActionCreator")
+  assignedActions     ActionTaken[]  @relation("ActionAssignee")
+  performedActions    ActionTaken[]  @relation("ActionPerformer")
 
   @@map("RequesterUser")
 }
@@ -89,6 +100,8 @@ model Ticket {
   itPriority          Priority? // defaults to requestedPriority at creation; IT Staff/Admin may change it
   status              TicketStatus @default(NEW)
   resolutionIndicated Boolean      @default(false) // Requester's "Problem Appears Resolved" flag
+  version             Int          @default(0) // Lab 4 optimistic concurrency (BR-19): +1 on every write
+  resolvedAt          DateTime? // Lab 4: set on Resolved, kept through Closed, cleared on reopen (BR-18)
 
   requesterId     Int
   ownerId         Int? // primary Ticket Owner: active IT Staff or Administrator, nullable = unassigned
@@ -98,13 +111,14 @@ model Ticket {
   createdAt DateTime @default(now()) // serialized to the client as `ticketDate`
   updatedAt DateTime @updatedAt
 
-  requester     User          @relation("TicketRequester", fields: [requesterId], references: [id], onDelete: Restrict)
-  owner         User?         @relation("TicketOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  category      Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  relatedSystem RelatedSystem @relation(fields: [relatedSystemId], references: [id], onDelete: Restrict)
+  requester     User           @relation("TicketRequester", fields: [requesterId], references: [id], onDelete: Restrict)
+  owner         User?          @relation("TicketOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  category      Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  relatedSystem RelatedSystem  @relation(fields: [relatedSystemId], references: [id], onDelete: Restrict)
   attachments   Attachment[]
   comments      Comment[]
   internalNotes InternalNote[]
+  actions       ActionTaken[]
 
   @@index([requesterId, createdAt(sort: Desc)])
   @@index([requesterId, status, createdAt(sort: Desc)])
@@ -112,6 +126,39 @@ model Ticket {
   @@index([requesterId, relatedSystemId])
   @@index([ownerId, status])
   @@index([status, createdAt(sort: Desc)])
+  // Lab 4 dashboard queries (specification.md §7).
+  @@index([status, updatedAt(sort: Desc)])
+  @@index([requesterId, updatedAt(sort: Desc)])
+}
+
+// Lab 4: planned or completed work recorded under a Ticket. Append-only: there is no delete,
+// an action is cancelled instead (BR-11), so every relation to it is Restrict except the Ticket.
+model ActionTaken {
+  id               Int          @id @default(autoincrement())
+  ticketId         Int
+  createdById      Int // immutable (BR-09)
+  assigneeId       Int // active IT Staff/Administrator at write time (BR-08)
+  performedById    Int? // set to the completer; null until completed (BR-09)
+  status           ActionStatus @default(PLANNED)
+  actionDateTime   DateTime     @default(now())
+  description      String       @db.VarChar(2000)
+  result           String?      @db.VarChar(2000) // required when COMPLETED (BR-07)
+  followUpRequired Boolean      @default(false)
+  followUpNote     String?      @db.VarChar(1000) // required when followUpRequired (BR-07)
+  attachmentNotes  String?      @db.VarChar(500) // free text, no file upload (spec §3)
+  clientRequestId  String? // idempotent create (BR-21)
+  version          Int          @default(0) // optimistic concurrency (BR-19)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  ticket      Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdBy   User   @relation("ActionCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  assignee    User   @relation("ActionAssignee", fields: [assigneeId], references: [id], onDelete: Restrict)
+  performedBy User?  @relation("ActionPerformer", fields: [performedById], references: [id], onDelete: Restrict)
+
+  @@unique([ticketId, clientRequestId])
+  @@index([ticketId, actionDateTime, id])
+  @@index([assigneeId, status, actionDateTime])
 }
 
 model Attachment {
@@ -128,9 +175,9 @@ model Attachment {
   removedReason String?   @db.VarChar(200)
   removedById   Int?
 
-  ticket     Ticket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  uploadedBy User    @relation("AttachmentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
-  removedBy  User?   @relation("AttachmentRemover", fields: [removedById], references: [id], onDelete: Restrict)
+  ticket     Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  uploadedBy User   @relation("AttachmentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  removedBy  User?  @relation("AttachmentRemover", fields: [removedById], references: [id], onDelete: Restrict)
 
   @@index([ticketId, removedAt])
 }

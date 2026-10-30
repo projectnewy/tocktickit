@@ -80,7 +80,7 @@ describe("PATCH /api/staff/tickets/:id/claim (FR-10, BR-14, BR-15, AC-06)", () =
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/claim`)
       .set("Cookie", cookieFor(staff.id, "IT_STAFF"))
-      .send({});
+      .send({ version: 0 });
     expect(res.status).toBe(200);
     expect(res.body.ticketOwner).toEqual({ id: staff.id, fullName: staff.fullName });
     expect(res.body.status).toBe("OPEN");
@@ -97,7 +97,7 @@ describe("PATCH /api/staff/tickets/:id/claim (FR-10, BR-14, BR-15, AC-06)", () =
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/claim`)
       .set("Cookie", cookieFor(staff.id, "IT_STAFF"))
-      .send({ targetUserId: otherStaff.id });
+      .send({ version: 0, targetUserId: otherStaff.id });
     expect(res.status).toBe(200);
     expect(res.body.ticketOwner).toEqual({ id: otherStaff.id, fullName: otherStaff.fullName });
   });
@@ -111,13 +111,13 @@ describe("PATCH /api/staff/tickets/:id/claim (FR-10, BR-14, BR-15, AC-06)", () =
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/claim`)
       .set("Cookie", cookieFor(staff.id, "IT_STAFF"))
-      .send({ targetUserId: inactiveStaff.id });
+      .send({ version: 0, targetUserId: inactiveStaff.id });
     expect(res.status).toBe(400);
 
     const toRequester = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/claim`)
       .set("Cookie", cookieFor(staff.id, "IT_STAFF"))
-      .send({ targetUserId: requester.id });
+      .send({ version: 0, targetUserId: requester.id });
     expect(toRequester.status).toBe(400);
   });
 });
@@ -133,7 +133,7 @@ describe("PATCH /api/staff/tickets/:id/priority (FR-11, BR-16)", () => {
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/priority`)
       .set("Cookie", cookieFor(staff.id, "IT_STAFF"))
-      .send({ itPriority: "URGENT" });
+      .send({ version: 0, itPriority: "URGENT" });
     expect(res.status).toBe(200);
     expect(res.body.itPriority).toBe("URGENT");
     expect(res.body.requestedPriority).toBe("LOW");
@@ -152,7 +152,7 @@ describe("PATCH /api/staff/tickets/:id/status (FR-12, BR-17, BR-18, AC-07)", () 
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/status`)
       .set("Cookie", cookieFor(staff.id, "IT_STAFF"))
-      .send({ status: "IN_PROGRESS" });
+      .send({ version: 0, status: "IN_PROGRESS" });
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("IN_PROGRESS");
   });
@@ -165,7 +165,7 @@ describe("PATCH /api/staff/tickets/:id/status (FR-12, BR-17, BR-18, AC-07)", () 
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/status`)
       .set("Cookie", cookieFor(staff.id, "IT_STAFF"))
-      .send({ status: "RESOLVED" });
+      .send({ version: 0, status: "RESOLVED" });
     expect(res.status).toBe(409);
 
     const detail = await request(app)
@@ -183,7 +183,7 @@ describe("PATCH /api/staff/tickets/:id/status (FR-12, BR-17, BR-18, AC-07)", () 
     const res = await request(app)
       .patch(`/api/staff/tickets/${ticket.id}/status`)
       .set("Cookie", cookieFor(admin.id, "ADMINISTRATOR"))
-      .send({ status: "CLOSED" });
+      .send({ version: 0, status: "CLOSED" });
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("CLOSED");
   });

@@ -53,7 +53,7 @@ export default function StaffTicketQueue() {
     };
   }, [JSON.stringify(query)]);
 
-  const hasActiveFilters = !!(query.q || query.categoryId || query.status?.length || query.ownerId !== undefined);
+  const hasActiveFilters = !!(query.q || query.categoryId || query.status?.length || query.itPriority?.length || query.ownerId !== undefined);
 
   return (
     <div>

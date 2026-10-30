@@ -44,8 +44,8 @@ router.patch(
   "/tickets/:ticketId/claim",
   asyncHandler(async (req, res) => {
     const ticketId = parseTicketId(req.params.ticketId);
-    const { targetUserId } = claimTicketSchema.parse(req.body);
-    const ticket = await staffService.claimTicket(ticketId, req.requesterId!, targetUserId);
+    const { version, targetUserId } = claimTicketSchema.parse(req.body);
+    const ticket = await staffService.claimTicket(ticketId, req.requesterId!, version, targetUserId);
     res.status(200).json(ticket);
   })
 );
@@ -54,8 +54,8 @@ router.patch(
   "/tickets/:ticketId/priority",
   asyncHandler(async (req, res) => {
     const ticketId = parseTicketId(req.params.ticketId);
-    const { itPriority } = priorityUpdateSchema.parse(req.body);
-    const ticket = await staffService.setPriority(ticketId, itPriority);
+    const { version, itPriority } = priorityUpdateSchema.parse(req.body);
+    const ticket = await staffService.setPriority(ticketId, version, itPriority);
     res.status(200).json(ticket);
   })
 );
@@ -64,8 +64,8 @@ router.patch(
   "/tickets/:ticketId/status",
   asyncHandler(async (req, res) => {
     const ticketId = parseTicketId(req.params.ticketId);
-    const { status } = statusUpdateSchema.parse(req.body);
-    const ticket = await staffService.setStatus(ticketId, status);
+    const { version, status } = statusUpdateSchema.parse(req.body);
+    const ticket = await staffService.setStatus(ticketId, version, status);
     res.status(200).json(ticket);
   })
 );
