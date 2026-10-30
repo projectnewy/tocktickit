@@ -3,7 +3,7 @@
 **Author:** Phuttipong Phankitnirundorn — 67070503430 — GitHub: @projectnewy
 **Peer reviewer:** Dechayut Panyawutvorakul — 67070503414 — GitHub: @NinjoMUDA
 
-Updated per merged PR. Rows are added only for PRs that exist on GitHub.
+Rows are added only for PRs that exist on GitHub.
 
 ## Pull Requests I authored (reviewed by my partner)
 
@@ -16,7 +16,7 @@ Updated per merged PR. Rows are added only for PRs that exist on GitHub.
 | [#65](https://github.com/projectnewy/tocktickit/pull/65) | feature/56-actions-taken-ui | #56 | Approved and merged (@NinjoMUDA) |
 | [#66](https://github.com/projectnewy/tocktickit/pull/66) | feature/57-requester-dashboard | #57 | Approved and merged (@NinjoMUDA) |
 | [#67](https://github.com/projectnewy/tocktickit/pull/67) | feature/58-staff-dashboard-landing | #58 | Approved and merged (@NinjoMUDA) |
-| [#68](https://github.com/projectnewy/tocktickit/pull/68) | feature/59-final-hardening | #59 | Awaiting review (@NinjoMUDA) |
+| [#68](https://github.com/projectnewy/tocktickit/pull/68) | feature/59-final-hardening | #59 | Approved and merged (@NinjoMUDA) |
 
 **Reviewer comments received:**
 
@@ -29,15 +29,19 @@ Updated per merged PR. Rows are added only for PRs that exist on GitHub.
 | #65 | Approved with a written verification summary covering the responsive table/cards, field-level validation and accessibility links, the stale-version reload, the Requester read-only view, and the test and screenshot evidence. No changes requested. |
 | #66 | Approved with a written verification summary covering the Bangkok window, ownership scoping, the drill-down checks, the Requester Dashboard screen, and the test evidence. No changes requested. |
 | #67 | Approved with a written verification summary covering the single-transaction metrics, capped lists, the drill-down checks, role landing and guards, and the test and screenshot evidence. No changes requested. |
+| #68 | Approved with a written verification summary covering session expiry (BR-33, AC-22) and the 200 session probe, removal of the Lab 1 `/system` screen, the performance test (PERF-01), the all-screens hardening audits, and the finalized documents (test table, UI checklist, README). No changes requested. |
 
-**How I responded:** on #60 all four points were fixed on the same branch (commit `ed96720`, no new PR) and
-replied to in the PR thread before the second review. #61 needed no changes.
+**How I responded:** on #60 all four points were fixed on the same branch (commit `ed96720`, no new PR) and replied to in the
+PR thread before the second review. On #61 and #63-#68 the reviewer requested no changes, and I acknowledged each approval with a
+reply in the PR thread.
 
 ## Pull Requests I reviewed for my partner
 
-Not recorded yet — to be checked against the partner's repository before submission.
+As of 2026-10-31 the partner's repository (`vienggg/toktickit`) contains no Lab 4 pull requests: its newest pull request is #74, a
+Lab 3 release merged on 2026-10-06. There is therefore nothing to record for Lab 4 yet. This was checked on GitHub and will be
+checked again before submission.
 
 ## Not a sprint PR
 
-PR #62 was opened by mistake (a documentation table nobody asked for), closed without merging, and its branch
-deleted; it received no review.
+PR #62 was opened by mistake (a documentation table nobody asked for), closed without merging, and its branch deleted; it received
+no review.
