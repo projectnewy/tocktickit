@@ -179,10 +179,11 @@ describe("RequesterDashboard", () => {
       expect(within(nav).getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
     });
 
-    it("IT Staff do not see the Requester Dashboard link", async () => {
+    it("IT Staff's Dashboard link goes to their own Dashboard, never the Requester one", async () => {
       renderWithProviders(<AppHeader />, { route: "/staff/tickets", user: { ...REQUESTER, role: "IT_STAFF" } });
       const nav = await screen.findByRole("navigation", { name: "Primary" });
-      expect(within(nav).queryByRole("link", { name: "Dashboard" })).not.toBeInTheDocument();
+      expect(within(nav).getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/staff/dashboard");
+      expect(within(nav).queryByRole("link", { name: "My Tickets" })).not.toBeInTheDocument();
     });
   });
 });

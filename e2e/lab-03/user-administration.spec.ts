@@ -55,7 +55,7 @@ test("Administrator creates a user; the new user logs in and is routed to Change
     // is no role-specific default landing page) — then confirm the new
     // IT_STAFF account can reach the Queue via the header nav link, proving
     // the role (not just the login) took effect.
-    await expect(newUserPage.getByRole("heading", { name: /my tickets/i })).toBeVisible();
+    await expect(newUserPage.getByRole("heading", { name: /^dashboard$/i })).toBeVisible();
     await newUserPage.getByRole("link", { name: /ticket queue/i }).click();
     await expect(newUserPage.getByRole("heading", { name: /ticket queue/i })).toBeVisible();
   } finally {

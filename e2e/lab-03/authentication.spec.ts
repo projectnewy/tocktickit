@@ -45,7 +45,7 @@ test("Administrator resets a user's password; that user is gated to Change Passw
   await page.getByLabel(/confirm new password/i).fill(finalPassword);
   await page.getByRole("button", { name: /save new password/i }).click();
 
-  await expect(page.getByRole("heading", { name: /my tickets/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^dashboard$/i })).toBeVisible();
 
   // No horizontal overflow on the auth screens at any viewport.
   const hasHorizontalScroll = await page.evaluate(
@@ -57,12 +57,12 @@ test("Administrator resets a user's password; that user is gated to Change Passw
   // is fully lifted (AC-01) — landing straight on My Tickets, no redirect.
   await logout(page);
   await login(page, "sarah.johnson@example.com", finalPassword);
-  await expect(page.getByRole("heading", { name: /my tickets/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^dashboard$/i })).toBeVisible();
 });
 
 test("a logged-out session cannot reach a protected screen (AC-13)", async ({ page }) => {
   await login(page, "jennifer.anderson@example.com", SEED_PASSWORD);
-  await expect(page.getByRole("heading", { name: /my tickets/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^dashboard$/i })).toBeVisible();
   await logout(page);
 
   await page.goto("/tickets");

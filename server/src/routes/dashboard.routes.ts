@@ -16,4 +16,13 @@ router.get(
   })
 );
 
+// Staff and Administrators; an Administrator additionally gets the user-account counts (BR-27).
+router.get(
+  "/staff",
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  asyncHandler(async (req, res) => {
+    res.status(200).json(await dashboardService.getStaffDashboard(req.requesterId!, req.userRole === "ADMINISTRATOR"));
+  })
+);
+
 export default router;

@@ -23,3 +23,29 @@ export interface RequesterDashboard {
 export function getRequesterDashboard(): Promise<RequesterDashboard> {
   return request<RequesterDashboard>("/api/dashboard/requester");
 }
+
+// docs/lab-04/api-spec.md "GET /api/dashboard/staff".
+export interface StaffDashboardTicket extends DashboardTicket {
+  owner: { id: number; fullName: string } | null;
+}
+
+export interface StaffDashboard {
+  timeZone: string;
+  windowStart: string;
+  unassigned: { count: number; link: string };
+  ownedByMe: { count: number; link: string };
+  byStatus: { status: TicketStatus; count: number; link: string }[];
+  byItPriority: { itPriority: Priority; count: number; link: string }[];
+  urgentTickets: { items: StaffDashboardTicket[]; link: string };
+  recentlyUpdated: { items: StaffDashboardTicket[]; link: string };
+  myPlannedActions: {
+    count: number;
+    items: { id: number; ticketId: number; ticketNumber: string; description: string; actionDateTime: string }[];
+  };
+  // Present only for an Administrator.
+  userCounts?: { REQUESTER: number; IT_STAFF: number; ADMINISTRATOR: number; inactive: number };
+}
+
+export function getStaffDashboard(): Promise<StaffDashboard> {
+  return request<StaffDashboard>("/api/dashboard/staff");
+}

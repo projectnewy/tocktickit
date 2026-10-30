@@ -45,6 +45,7 @@ export interface StaffTicketListQuery {
   pageSize?: number;
   q?: string;
   status?: string[];
+  itPriority?: string[];
   categoryId?: number;
   ownerId?: OwnerFilter;
   sort?: string;
@@ -59,6 +60,7 @@ export function listStaffTickets(query: StaffTicketListQuery = {}): Promise<Staf
   if (query.ownerId !== undefined) params.set("ownerId", String(query.ownerId));
   if (query.sort) params.set("sort", query.sort);
   for (const s of query.status ?? []) params.append("status", s);
+  for (const p of query.itPriority ?? []) params.append("itPriority", p);
   const qs = params.toString();
   return request<StaffTicketListResponse>(`/api/staff/tickets${qs ? `?${qs}` : ""}`);
 }

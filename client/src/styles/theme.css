@@ -54,6 +54,10 @@ body {
   --bs-btn-hover-border-color: var(--tk-green-primary);
 }
 
+.progress-bar {
+  background-color: var(--tk-green-primary);
+}
+
 .form-check-input:checked {
   background-color: var(--tk-green-primary);
   border-color: var(--tk-green-primary);
