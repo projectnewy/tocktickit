@@ -7,6 +7,7 @@ import { FormField } from "../components/ui/FormField.js";
 
 interface LocationState {
   from?: { pathname?: string };
+  expired?: boolean;
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -54,6 +55,9 @@ export default function Login() {
       <div className="tk-surface p-4" style={{ maxWidth: 400, width: "100%" }}>
         <h1 className="h4 mb-3">TokTickIT</h1>
 
+        {!error && (location.state as LocationState | null)?.expired && (
+          <Alert variant="info">Your session has expired. Please sign in again.</Alert>
+        )}
         {error && <Alert variant="error">{error}</Alert>}
 
         <form onSubmit={handleSubmit} noValidate>

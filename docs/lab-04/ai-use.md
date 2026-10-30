@@ -3,7 +3,7 @@
 **LLM/agent used:** Claude Code (Claude Sonnet 5.5), via the Claude desktop app's Code tab.
 
 This file is updated per Issue. Entries so far cover the Issue #53 review, Issue #54 (Actions Taken
-foundation), Issue #55 (workflow and gate), Issue #56 (Actions Taken UI), Issue #57 (Requester Dashboard) and Issue #58 (Staff Dashboard and role landing); later Issues append rows, and the reflection is completed in Issue #59.
+foundation), Issue #55 (workflow and gate), Issue #56 (Actions Taken UI), Issue #57 (Requester Dashboard), Issue #58 (Staff Dashboard and role landing) and Issue #59 (final hardening); the reflection below is for the author to write.
 
 ## Selected key prompts
 
@@ -26,7 +26,10 @@ foundation), Issue #55 (workflow and gate), Issue #56 (Actions Taken UI), Issue 
 | 15 | Implement Issue #58: the IT Staff Dashboard API and screen, role landing after login/password change/root, role-aware navigation and route guards, and the Staff Queue's IT Priority filter and real "last updated" sort. | Counts are plain typed `count` queries inside one transaction (a batched `groupBy` lost its result types). Every metric test compares the endpoint with separately written SQL (API-21); every count's link is replayed against the Ticket Queue and its total compared with the count (API-23, repeated in a real browser for all 11 rows). A deliberate fault (ownedByMe ignoring the user, wrong status set) made 3 of 18 API tests fail and was reverted. |
 | 16 | (Found while building #58) Dashboard drill-downs hid information in the filters. | A link with five statuses opened a list of five statuses, but the Status dropdown showed only the first (this also affected My Tickets from #57). Both dropdowns now show a disabled "N statuses selected" entry. Also found: the Staff Queue's "Last Updated" header sorted by creation date, and the progress bars and links were Bootstrap blue. All fixed here and noted in the PR. |
 | 17 | (Regression, expected) Changing the landing page changed what earlier E2E specs assume after login. | Lab 2-3 specs asserted the My Tickets heading right after login or after the forced password change; they now expect the Dashboard (specification decision 10). One test also failed because login returns a user to the page they were on, which the first fix had not allowed for; fixed rather than hard-coded. Full E2E afterwards: all passing. |
+| 18 | Implement Issue #59: final hardening — remove the Lab 1 `/system` screen, handle expired sessions, bring the README up to date, and finish the test documents with real output. | Wrote `hardening.spec.ts` before deciding what to fix: every screen of every role is opened and the run fails on any console error, failed request, placeholder-looking text, horizontal scroll or broken link. It found one real issue: each signed-out page load logged a 401 from the session check. Fixed with a probe that answers 200, rather than ignoring the console message. Both new audits were run against a deliberate fault to confirm they can fail, then the code was restored. |
+| 19 | (Design decision) How to treat a 401 on any request. | A 401 from a feature call ends the client session and returns to Login with a message, but a wrong password or wrong current password (also 401) must keep its own message. The rule excludes `/api/auth/*`, and five tests pin both sides, including that signing in again returns to the page the user was on. |
+| 20 | Fill the checklist and the Final status honestly. | The Final status table lists the actual commands and counts from this run (server 410, client 194, E2E 87); the 11 checklist items are ticked with the file or spec that proves each, and what is not covered (screen readers, other browsers, load beyond PERF-01, CI) is stated. The reflection remains for the author to write. |
 
 ## Reflection
 
-To be written by the author at Issue #59 (Final hardening), once all Lab 4 Issues are merged.
+To be written by the author before submission. The agent does not write this section: it is the author's own reflection on using the AI agent.

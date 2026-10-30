@@ -9,7 +9,7 @@ import { landingPath } from "../../config/landing.js";
 // mustChangePassword — /change-password itself uses this alone, since
 // wrapping it in the full AuthGuard below would redirect it to itself.
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { user, isBootstrapping } = useAuth();
+  const { user, isBootstrapping, sessionExpired } = useAuth();
   const location = useLocation();
 
   if (isBootstrapping) {
@@ -23,7 +23,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <Navigate to="/login" replace state={{ from: location, expired: sessionExpired }} />;
   }
 
   return <>{children}</>;

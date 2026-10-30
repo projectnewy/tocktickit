@@ -8,6 +8,23 @@ All endpoints below require a valid session; a user who must change their passwo
 Status codes: 400 validation · 401 unauthenticated · 403 wrong role · 404 not found / not owned (identical) ·
 409 conflict · 422 business-rule violation · 500 unexpected.
 
+## Session probe (added in Issue #59)
+
+`GET /api/auth/session` — no authentication required. The client asks it on every page load. It always answers **200**:
+
+```json
+{ "user": { "id": 3, "fullName": "Priya Natarajan", "email": "priya.natarajan@example.com", "role": "IT_STAFF", "mustChangePassword": false } }
+```
+
+or `{ "user": null }` when there is no cookie, the cookie is invalid or forged, or the account is inactive or gone. It never returns the
+password hash. It exists so that a signed-out visit is not a failed request (a 401 is logged as an error by every browser); `GET /api/auth/me`
+keeps its Lab 3 contract and still returns 401 without a session.
+
+**Expired sessions (BR-33).** Any other endpoint returns 401 `{ "error": "Not authenticated" }` once the session is gone. The client treats a 401
+from any non-`/api/auth/*` call as an ended session: it clears the signed-in user, returns to Login with "Your session has expired. Please sign in
+again.", and after signing in again goes back to the screen the user was on. A 401 from `/api/auth/login` or `/api/auth/change-password` (wrong
+password) is an ordinary error and does not do this.
+
 ## Authorization matrix
 
 | Operation | Requester | IT Staff | Administrator |

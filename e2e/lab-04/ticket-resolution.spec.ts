@@ -6,8 +6,8 @@ import { login } from "../lab-03/helpers.js";
 // E2E-03 / E2E-04 (docs/lab-04/tests.md): the Ticket resolution workflow in a real browser with real
 // sessions — the Requester's advisory "problem appears resolved", the backend resolution gate shown in
 // plain language, a successful Resolve/Close/Reopen, the stale-version reload, and cancelling a Ticket
-// that has Planned actions. Actions Taken are created through the API here because their screen is a
-// later Issue; everything about the Ticket itself is driven through the UI.
+// that has Planned actions. The first flow adds and completes its Actions Taken through their screen; the
+// cancel flow seeds Planned actions through the API because only the Ticket's cascade is under test there.
 const API = "http://localhost:3000";
 
 function screenshotPath(folder: string, projectName: string, suffix = ""): string {
@@ -69,20 +69,24 @@ test("Requester advice is advisory; the gate blocks Resolved in plain language u
     await noHorizontalScroll(staffPage);
     await staffPage.screenshot({ path: screenshotPath("ticket-workflow", testInfo.project.name), fullPage: true });
 
-    // A Planned action blocks it too.
-    const created = await staffContext.request.post(`${API}/api/tickets/${ticketId}/actions`, {
-      data: { description: "Re-test the VPN after the patch" },
-    });
-    expect(created.status()).toBe(201);
-    const action = await created.json();
+    // A Planned action blocks it too: add one through the Actions Taken screen.
+    const description = `Re-test the VPN after the patch ${Date.now()}`;
+    await staffPage.getByRole("button", { name: "Add Action" }).click();
+    let dialog = staffPage.getByRole("dialog");
+    await dialog.getByLabel(/^description/i).fill(description);
+    await dialog.getByRole("button", { name: "Create action" }).click();
+    await expect(staffPage.getByText("Action added.")).toBeVisible();
     await staffPage.getByLabel(/^status$/i).selectOption("RESOLVED");
     await expect(staffPage.getByText("Complete or cancel all planned actions.")).toBeVisible();
 
-    // Complete the work (through the API), then Resolve succeeds without any Requester involvement.
-    const completed = await staffContext.request.patch(`${API}/api/tickets/${ticketId}/actions/${action.id}`, {
-      data: { version: action.version, status: "COMPLETED", result: "VPN stays connected for an hour" },
-    });
-    expect(completed.status()).toBe(200);
+    // Complete the work on the same screen (a table on desktop, cards below 992px), then Resolve succeeds
+    // without any Requester involvement.
+    const actionRow = testInfo.project.name === "desktop" ? staffPage.locator("table tr") : staffPage.getByTestId("action-cards").locator("li");
+    await actionRow.filter({ hasText: description }).getByRole("button", { name: /^Complete/ }).click();
+    dialog = staffPage.getByRole("dialog");
+    await dialog.getByLabel(/^result/i).fill("VPN stays connected for an hour");
+    await dialog.getByRole("button", { name: "Complete action" }).click();
+    await expect(staffPage.getByText("Action saved.")).toBeVisible();
     await staffPage.getByLabel(/^status$/i).selectOption("RESOLVED");
     await expect(staffPage.getByText("Status changed to Resolved.")).toBeVisible();
     await expect(staffPage.getByLabel(/^status$/i)).toContainText("Closed");

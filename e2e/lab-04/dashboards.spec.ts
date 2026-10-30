@@ -403,3 +403,37 @@ test("the IT Staff flow works from the keyboard alone: dashboard link, then a qu
     await context.close();
   }
 });
+
+test("an ended session returns the user to Login with a message, and signing in again returns to the same screen (E2E-07, AC-22, BR-33)", async ({ browser }) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  try {
+    await login(page, "jennifer.anderson@example.com");
+    await page.goto("/dashboard");
+    await expect(page.getByRole("region", { name: "Open Tickets" })).toBeVisible();
+
+    // The session cookie disappears while the screen is open (expired, cleared, or signed out elsewhere).
+    await context.clearCookies();
+    await page.getByRole("button", { name: "Refresh" }).click();
+
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByText("Your session has expired. Please sign in again.")).toBeVisible();
+    await expect(page.locator("body")).not.toContainText(/Not authenticated|401|Unauthorized/);
+    await noHorizontalScroll(page);
+
+    // The message is for expiry only: a fresh failed sign-in shows its own error instead.
+    await page.getByLabel(/email/i).fill("jennifer.anderson@example.com");
+    await page.getByLabel(/password/i).fill("definitely-wrong-password");
+    await page.getByRole("button", { name: /sign in/i }).click();
+    await expect(page.getByText(/invalid email or password/i)).toBeVisible();
+    await expect(page.getByText("Your session has expired. Please sign in again.")).toHaveCount(0);
+
+    // Signing in properly brings the user back to where they were.
+    await page.getByLabel(/password/i).fill("Password123!");
+    await page.getByRole("button", { name: /sign in/i }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByRole("region", { name: "Open Tickets" })).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
