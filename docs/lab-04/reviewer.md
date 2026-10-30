@@ -16,6 +16,7 @@ Updated per merged PR. Rows are added only for PRs that exist on GitHub.
 | [#65](https://github.com/projectnewy/tocktickit/pull/65) | feature/56-actions-taken-ui | #56 | Approved and merged (@NinjoMUDA) |
 | [#66](https://github.com/projectnewy/tocktickit/pull/66) | feature/57-requester-dashboard | #57 | Approved and merged (@NinjoMUDA) |
 | [#67](https://github.com/projectnewy/tocktickit/pull/67) | feature/58-staff-dashboard-landing | #58 | Approved and merged (@NinjoMUDA) |
+| [#68](https://github.com/projectnewy/tocktickit/pull/68) | feature/59-final-hardening | #59 | Awaiting review (@NinjoMUDA) |
 
 **Reviewer comments received:**
 
