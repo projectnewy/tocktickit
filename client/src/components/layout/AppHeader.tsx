@@ -19,6 +19,9 @@ export function AppHeader() {
         <nav className="d-flex gap-3" aria-label="Primary">
           {user?.role === "REQUESTER" && (
             <>
+              <NavLink to="/dashboard" className={navLinkClass} end>
+                Dashboard
+              </NavLink>
               <NavLink to="/tickets" className={navLinkClass} end>
                 My Tickets
               </NavLink>
@@ -28,9 +31,14 @@ export function AppHeader() {
             </>
           )}
           {isStaff && (
-            <NavLink to="/staff/tickets" className={navLinkClass}>
-              Ticket Queue
-            </NavLink>
+            <>
+              <NavLink to="/staff/dashboard" className={navLinkClass} end>
+                Dashboard
+              </NavLink>
+              <NavLink to="/staff/tickets" className={navLinkClass}>
+                Ticket Queue
+              </NavLink>
+            </>
           )}
           {user?.role === "ADMINISTRATOR" && (
             <NavLink to="/admin/users" className={navLinkClass}>

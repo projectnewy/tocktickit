@@ -3,9 +3,10 @@ import type { AdminUser } from "../../api/admin.js";
 import { createUser, updateUser } from "../../api/admin.js";
 import { ApiError } from "../../api/client.js";
 import type { Role } from "../../api/types.js";
+import { ROLE_VALUES, roleLabel } from "../../config/labels.js";
 import { Alert } from "../ui/Alert.js";
-
-const ROLE_OPTIONS: Role[] = ["REQUESTER", "IT_STAFF", "ADMINISTRATOR"];
+import { FormField } from "../ui/FormField.js";
+import { Modal } from "../ui/Modal.js";
 
 interface UserFormModalProps {
   user?: AdminUser; // present = edit mode, absent = create mode
@@ -15,12 +16,15 @@ interface UserFormModalProps {
   onResetPassword?: (user: AdminUser) => void; // edit mode only
 }
 
-// ui-spec.md §5: "ConfirmDialog-style, hand-rolled" — same modal chrome as
-// ConfirmDialog, but this form has multiple fields and its own inline
-// validation/error handling, so it isn't built on top of that component.
+type FieldErrors = Partial<Record<"fullName" | "email" | "initialPassword", string>>;
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// ui-spec.md §4/§6: built on the shared Modal (focus handling, Escape), with
+// below-field validation messages and data kept after a recoverable failure.
 export function UserFormModal({ user, currentUserId, onCancel, onSaved, onResetPassword }: UserFormModalProps) {
-  const isSelf = user?.id === currentUserId;
   const isEdit = !!user;
+  const isSelf = user?.id === currentUserId;
   const [fullName, setFullName] = useState(user?.fullName ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [role, setRole] = useState<Role>(user?.role ?? "REQUESTER");
@@ -28,10 +32,30 @@ export function UserFormModal({ user, currentUserId, onCancel, onSaved, onResetP
   const [initialPassword, setInitialPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  function validate(): FieldErrors {
+    const errors: FieldErrors = {};
+    if (!fullName.trim()) errors.fullName = "Name is required.";
+    else if (fullName.trim().length > 100) errors.fullName = "Name must be at most 100 characters.";
+    if (!email.trim()) errors.email = "Email is required.";
+    else if (!EMAIL_PATTERN.test(email.trim())) errors.email = "Enter a valid email address.";
+    if (!isEdit) {
+      if (!initialPassword) errors.initialPassword = "Initial password is required.";
+      else if (initialPassword.length < 8 || initialPassword.length > 72) {
+        errors.initialPassword = "Password must be 8–72 characters.";
+      }
+    }
+    return errors;
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
+    const errors = validate();
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     setSubmitting(true);
     try {
       const saved = isEdit
@@ -48,136 +72,117 @@ export function UserFormModal({ user, currentUserId, onCancel, onSaved, onResetP
   }
 
   return (
-    <>
-      <div className="modal d-block" role="dialog" aria-modal="true" aria-labelledby="user-form-title" tabIndex={-1}>
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2 className="modal-title h5" id="user-form-title">
-                {isEdit ? `Edit ${user!.fullName}` : "Create User"}
-              </h2>
-              <button type="button" className="btn-close" aria-label="Close" onClick={onCancel} />
+    <Modal title={isEdit ? `Edit ${user!.fullName}` : "Create User"} onClose={onCancel} closeDisabled={submitting}>
+      <form onSubmit={handleSubmit} noValidate>
+        <div className="modal-body">
+          {error && <Alert variant="error">{error}</Alert>}
+
+          <FormField id="user-full-name" label="Name" required error={fieldErrors.fullName}>
+            <input
+              id="user-full-name"
+              type="text"
+              className="form-control"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              maxLength={100}
+              disabled={submitting}
+            />
+          </FormField>
+
+          <FormField id="user-email" label="Email" required error={fieldErrors.email}>
+            <input
+              id="user-email"
+              type="email"
+              className="form-control"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={submitting}
+            />
+          </FormField>
+
+          <FormField id="user-role" label="Role" required>
+            <select
+              id="user-role"
+              className="form-select"
+              value={role}
+              onChange={(e) => setRole(e.target.value as Role)}
+              disabled={submitting}
+            >
+              {ROLE_VALUES.map((r) => (
+                <option key={r} value={r}>
+                  {roleLabel(r)}
+                </option>
+              ))}
+            </select>
+          </FormField>
+
+          {isEdit && (
+            <div className="mb-3">
+              <div className="form-check form-switch">
+                <input
+                  id="user-active"
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={isActive}
+                  onChange={(e) => setIsActive(e.target.checked)}
+                  disabled={submitting || isSelf}
+                  aria-describedby={isSelf ? "user-active-help" : undefined}
+                />
+                <label htmlFor="user-active" className="form-check-label">
+                  Active
+                </label>
+              </div>
+              {/* BR-25: disabled rather than left to error on submit — a
+                  clearer signal than a round-trip failure. */}
+              {isSelf && (
+                <p className="tk-help mb-0" id="user-active-help">
+                  You can't deactivate your own account.
+                </p>
+              )}
             </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                {error && <Alert variant="error">{error}</Alert>}
+          )}
 
-                <div className="mb-3">
-                  <label htmlFor="user-full-name" className="form-label fw-semibold">
-                    Name <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    id="user-full-name"
-                    type="text"
-                    className="form-control"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    maxLength={100}
-                    disabled={submitting}
-                  />
-                </div>
+          {!isEdit && (
+            <FormField
+              id="user-initial-password"
+              label="Initial Password"
+              required
+              error={fieldErrors.initialPassword}
+              help="8–72 characters. The user must change it at first login."
+            >
+              <input
+                id="user-initial-password"
+                type="password"
+                className="form-control"
+                value={initialPassword}
+                onChange={(e) => setInitialPassword(e.target.value)}
+                maxLength={72}
+                autoComplete="new-password"
+                disabled={submitting}
+              />
+            </FormField>
+          )}
 
-                <div className="mb-3">
-                  <label htmlFor="user-email" className="form-label fw-semibold">
-                    Email <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    id="user-email"
-                    type="email"
-                    className="form-control"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label htmlFor="user-role" className="form-label fw-semibold">
-                    Role <span className="text-danger">*</span>
-                  </label>
-                  <select
-                    id="user-role"
-                    className="form-select"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value as Role)}
-                    disabled={submitting}
-                  >
-                    {ROLE_OPTIONS.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {isEdit && (
-                  <div className="mb-3">
-                    <div className="form-check form-switch">
-                      <input
-                        id="user-active"
-                        type="checkbox"
-                        className="form-check-input"
-                        checked={isActive}
-                        onChange={(e) => setIsActive(e.target.checked)}
-                        disabled={submitting || isSelf}
-                      />
-                      <label htmlFor="user-active" className="form-check-label">
-                        Active
-                      </label>
-                    </div>
-                    {/* BR-25: disabled rather than left to error on submit — a
-                        clearer signal than a round-trip failure, per the
-                        reviewer's UI-hint request on PR #43. */}
-                    {isSelf && <p className="tk-help mb-0">You can't deactivate your own account.</p>}
-                  </div>
-                )}
-
-                {!isEdit && (
-                  <div className="mb-1">
-                    <label htmlFor="user-initial-password" className="form-label fw-semibold">
-                      Initial Password <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      id="user-initial-password"
-                      type="password"
-                      className="form-control"
-                      value={initialPassword}
-                      onChange={(e) => setInitialPassword(e.target.value)}
-                      required
-                      minLength={8}
-                      maxLength={72}
-                      disabled={submitting}
-                    />
-                  </div>
-                )}
-                {!isEdit && <p className="tk-help mb-0">8–72 characters. The user must change it at first login.</p>}
-
-                {isEdit && onResetPassword && (
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary"
-                    disabled={submitting}
-                    onClick={() => onResetPassword(user!)}
-                  >
-                    Set new password…
-                  </button>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-outline-secondary" onClick={onCancel} disabled={submitting}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={submitting}>
-                  {submitting ? "Saving…" : isEdit ? "Save Changes" : "Create User"}
-                </button>
-              </div>
-            </form>
-          </div>
+          {isEdit && onResetPassword && (
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary"
+              disabled={submitting}
+              onClick={() => onResetPassword(user!)}
+            >
+              Set new password…
+            </button>
+          )}
         </div>
-      </div>
-      <div className="modal-backdrop show" />
-    </>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-outline-secondary" onClick={onCancel} disabled={submitting}>
+            Cancel
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
+            {submitting ? "Saving…" : isEdit ? "Save Changes" : "Create User"}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

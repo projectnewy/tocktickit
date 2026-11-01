@@ -45,6 +45,12 @@ export async function login(email: string, password: string): Promise<{ user: Au
   return { user: toAuthenticatedUser(user), token };
 }
 
+// Used by the session probe (GET /api/auth/session): a missing or inactive user is simply "nobody", not an error.
+export async function findActiveUser(userId: number): Promise<AuthenticatedUser | null> {
+  const user = await getPrisma().user.findUnique({ where: { id: userId } });
+  return user && user.isActive ? toAuthenticatedUser(user) : null;
+}
+
 export async function getCurrentUser(userId: number): Promise<AuthenticatedUser> {
   const user = await getPrisma().user.findUniqueOrThrow({ where: { id: userId } });
   return toAuthenticatedUser(user);

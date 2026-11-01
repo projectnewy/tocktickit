@@ -2,9 +2,10 @@ import { useEffect, useState, type FormEvent } from "react";
 import { listCategories, listRelatedSystems } from "../../api/reference.js";
 import type { Category, RelatedSystem } from "../../api/types.js";
 import type { TicketListQuery } from "../../api/tickets.js";
-import { PRIORITY_OPTIONS } from "../../config.js";
+import { PRIORITY_VALUES, STATUS_VALUES, priorityLabel, statusLabel } from "../../config/labels.js";
 
-const STATUS_OPTIONS = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"] as const;
+// Shown (disabled) when a Dashboard link opened the list with several statuses at once.
+const SEVERAL = "__several";
 
 interface TicketFiltersProps {
   query: TicketListQuery;
@@ -80,9 +81,9 @@ export function TicketFilters({ query, onChange, onClear }: TicketFiltersProps) 
             onChange={(e) => onChange({ requestedPriority: e.target.value ? [e.target.value] : undefined })}
           >
             <option value="">All Priorities</option>
-            {PRIORITY_OPTIONS.map((p) => (
+            {PRIORITY_VALUES.map((p) => (
               <option key={p} value={p}>
-                {p}
+                {priorityLabel(p)}
               </option>
             ))}
           </select>
@@ -94,13 +95,18 @@ export function TicketFilters({ query, onChange, onClear }: TicketFiltersProps) 
           <select
             id="filter-status"
             className="form-select"
-            value={query.status?.[0] ?? ""}
+            value={(query.status?.length ?? 0) > 1 ? SEVERAL : query.status?.[0] ?? ""}
             onChange={(e) => onChange({ status: e.target.value ? [e.target.value] : undefined })}
           >
             <option value="">All Statuses</option>
-            {STATUS_OPTIONS.map((s) => (
+            {(query.status?.length ?? 0) > 1 && (
+              <option value={SEVERAL} disabled>
+                {query.status!.length} statuses selected
+              </option>
+            )}
+            {STATUS_VALUES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {statusLabel(s)}
               </option>
             ))}
           </select>

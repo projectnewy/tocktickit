@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { listUsers, type AdminUser, type UserQuery } from "../api/admin.js";
 import { useAuth } from "../context/AuthContext.js";
 import type { Role } from "../api/types.js";
+import { ROLE_VALUES, roleLabel } from "../config/labels.js";
 import { RoleBadge } from "../components/ui/RoleBadge.js";
 import { ActiveBadge } from "../components/ui/ActiveBadge.js";
 import { UserFormModal } from "../components/admin/UserFormModal.js";
@@ -9,8 +10,6 @@ import { ResetPasswordModal } from "../components/admin/ResetPasswordModal.js";
 import { Spinner } from "../components/ui/Spinner.js";
 import { Alert } from "../components/ui/Alert.js";
 import { EmptyState } from "../components/ui/EmptyState.js";
-
-const ROLE_OPTIONS: Role[] = ["REQUESTER", "IT_STAFF", "ADMINISTRATOR"];
 
 type LoadState = "loading" | "success" | "error";
 type ModalState = { kind: "create" } | { kind: "edit"; user: AdminUser } | { kind: "reset"; user: AdminUser } | null;
@@ -99,9 +98,9 @@ export default function UserManagement() {
               onChange={(e) => setQuery((q) => ({ ...q, role: e.target.value ? (e.target.value as Role) : undefined }))}
             >
               <option value="">All Roles</option>
-              {ROLE_OPTIONS.map((r) => (
+              {ROLE_VALUES.map((r) => (
                 <option key={r} value={r}>
-                  {r}
+                  {roleLabel(r)}
                 </option>
               ))}
             </select>

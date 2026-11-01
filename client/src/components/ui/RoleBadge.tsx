@@ -1,10 +1,5 @@
 import type { Role } from "../../api/types.js";
-
-const LABELS: Record<Role, string> = {
-  REQUESTER: "Requester",
-  IT_STAFF: "IT Staff",
-  ADMINISTRATOR: "Administrator",
-};
+import { roleLabel } from "../../config/labels.js";
 
 const CLASSES: Record<Role, string> = {
   REQUESTER: "text-bg-secondary",
@@ -13,5 +8,5 @@ const CLASSES: Record<Role, string> = {
 };
 
 export function RoleBadge({ role }: { role: Role }) {
-  return <span className={`badge ${CLASSES[role]}`}>{LABELS[role]}</span>;
+  return <span className={`badge ${CLASSES[role]}`}>{roleLabel(role)}</span>;
 }

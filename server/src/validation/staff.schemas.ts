@@ -10,6 +10,8 @@ export const STAFF_SORT_ALLOWLIST = [
   "status:desc",
   "ticketNumber:asc",
   "ticketNumber:desc",
+  "updatedAt:desc",
+  "updatedAt:asc",
 ] as const;
 
 const STATUS_VALUES = ["NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED"] as const;
@@ -31,6 +33,8 @@ export const staffQuerySchema = z.object({
     .default(10),
   q: z.string().trim().max(100).optional(),
   status: z.preprocess(toArray, z.array(z.enum(STATUS_VALUES)).optional()),
+  // Repeated ?itPriority=URGENT&itPriority=HIGH; an unknown value is a 400, never ignored.
+  itPriority: z.preprocess(toArray, z.array(z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"])).optional()),
   categoryId: z.coerce.number().int().positive().optional(),
   ownerId: ownerIdSchema,
   sort: z.enum(STAFF_SORT_ALLOWLIST).default("createdAt:desc"),
@@ -42,16 +46,22 @@ const PRIORITY_VALUES = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const;
 
 // FR-10/§12: omitted targetUserId means "claim for self" — the caller's id is
 // resolved in the route, not here (this schema has no request context).
+// BR-19: every write to a Ticket carries the version the client last read.
+const version = z.number().int().min(0).max(2_147_483_647);
+
 export const claimTicketSchema = z.object({
+  version,
   targetUserId: z.coerce.number().int().positive().optional(),
 });
 
 // FR-11: independent of requestedPriority, IT Staff/Admin only.
 export const priorityUpdateSchema = z.object({
+  version,
   itPriority: z.enum(PRIORITY_VALUES),
 });
 
 // FR-12/§6: validated against the transition matrix in the service layer, not here.
 export const statusUpdateSchema = z.object({
+  version,
   status: z.enum(STATUS_VALUES),
 });

@@ -26,7 +26,7 @@ async function loginAsRequester(page: Page, email: string) {
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/password/i).fill(SEED_PASSWORD);
   await page.getByRole("button", { name: /sign in/i }).click();
-  await expect(page.getByRole("heading", { name: /my tickets/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^dashboard$|^my tickets$/i })).toBeVisible();
 }
 
 // Bootstrap's d-none/d-lg-table and d-lg-none classes only toggle CSS
@@ -97,6 +97,9 @@ test("a different Requester's login shows a different ticket list, never a switc
   const MICHAEL_ONLY_TICKET = "Keyboard keys unresponsive";
 
   await loginAsRequester(page, "jennifer.anderson@example.com");
+  // Login now lands on the Dashboard (Lab 4); the ticket list is one navigation away.
+  await page.goto("/tickets");
+  await expect(page.getByRole("heading", { name: /my tickets/i })).toBeVisible();
   await expect(page.getByText(MICHAEL_ONLY_TICKET)).not.toBeVisible();
   // Lab 3 removed the in-app "Switch requester" button entirely — a
   // different identity now only ever comes from a fresh login.
@@ -106,5 +109,6 @@ test("a different Requester's login shows a different ticket list, never a switc
   await expect(page.getByRole("heading", { name: "TokTickIT" })).toBeVisible();
 
   await loginAsRequester(page, "michael.brown@example.com");
+  await page.goto("/tickets");
   await expect(ticketListItem(page, testInfo.project.name, MICHAEL_ONLY_TICKET)).toBeVisible();
 });

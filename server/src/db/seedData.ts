@@ -1,4 +1,4 @@
-import type { PrismaClient, Priority, Role } from "@prisma/client";
+import type { PrismaClient, Priority, Role, TicketStatus } from "@prisma/client";
 import { nextTicketNumber } from "../services/ticketNumber.js";
 import { hashPassword } from "../auth/password.js";
 
@@ -129,10 +129,203 @@ const DEMO_TICKETS: Array<{
   { requesterEmail: "michael.brown@example.com", categoryName: "Account and Access", relatedSystemName: "Email", summary: "Distribution list access needed", description: "Need to be added to the sales-team distribution list.", requestedPriority: "LOW" },
 ];
 
+// ---------------------------------------------------------------------------
+// Lab 4 demo workflow data (specification.md §7, FR-15): Tickets in every status and priority, owned
+// and unassigned, with zero, one, and many Actions Taken, so both zero and non-zero dashboard metrics
+// exist. Idempotent: a Ticket is identified by (requester, summary) and is only created — together with
+// its actions — when it is missing, so running the seed again adds nothing. Sarah Johnson deliberately
+// has no Tickets (all-zero Requester dashboard); Michael Brown has waiting and resolved ones.
+// ---------------------------------------------------------------------------
+
+interface DemoAction {
+  by: string; // creator's email
+  assignee: string; // assignee's email
+  status: "PLANNED" | "COMPLETED" | "CANCELLED";
+  daysAgo: number;
+  description: string;
+  result?: string;
+  followUpNote?: string;
+  attachmentNotes?: string;
+}
+
+interface DemoWorkTicket {
+  requesterEmail: string;
+  categoryName: string;
+  relatedSystemName: string;
+  summary: string;
+  description: string;
+  requestedPriority: Priority;
+  itPriority: Priority;
+  status: TicketStatus;
+  ownerEmail?: string;
+  updatedDaysAgo: number;
+  resolvedDaysAgo?: number;
+  resolutionIndicated?: boolean;
+  actions: DemoAction[];
+}
+
+const PRIYA = "priya.natarajan@example.com";
+const CARLOS = "carlos.mendes@example.com";
+const EMMA = "emma.wilson@example.com";
+const OLIVIA = "olivia.grant@example.com";
+const MICHAEL = "michael.brown@example.com";
+const JENNIFER = "jennifer.anderson@example.com";
+
+const DEMO_WORK_TICKETS: DemoWorkTicket[] = [
+  {
+    requesterEmail: MICHAEL, categoryName: "Network", relatedSystemName: "Campus Wi-Fi",
+    summary: "Wi-Fi certificate expired on laptop", description: "The laptop refuses to join the campus Wi-Fi and reports an expired certificate.",
+    requestedPriority: "HIGH", itPriority: "URGENT", status: "IN_PROGRESS", ownerEmail: CARLOS, updatedDaysAgo: 0,
+    actions: [
+      { by: CARLOS, assignee: CARLOS, status: "COMPLETED", daysAgo: 2, description: "Reproduced the certificate error on a test laptop", result: "Confirmed the root certificate expired on 1 Oct" },
+      { by: CARLOS, assignee: PRIYA, status: "PLANNED", daysAgo: -1, description: "Push the renewed certificate through device management" },
+      { by: PRIYA, assignee: EMMA, status: "PLANNED", daysAgo: -2, description: "Verify the laptop joins Wi-Fi after the push" },
+      { by: CARLOS, assignee: CARLOS, status: "CANCELLED", daysAgo: 1, description: "Reimage the laptop (not needed)" },
+    ],
+  },
+  {
+    requesterEmail: MICHAEL, categoryName: "Hardware", relatedSystemName: "Corporate Laptop",
+    summary: "Request for a second monitor", description: "Working with two documents side by side would be much easier with a second monitor.",
+    requestedPriority: "LOW", itPriority: "LOW", status: "WAITING_FOR_REQUESTER", ownerEmail: PRIYA, updatedDaysAgo: 1,
+    actions: [
+      { by: PRIYA, assignee: PRIYA, status: "COMPLETED", daysAgo: 1, description: "Checked stock for a matching monitor", result: "Monitor reserved, waiting for the desk number", followUpNote: "Ask the requester for the desk number", attachmentNotes: "Desk plan PDF is on the Ticket" },
+    ],
+  },
+  {
+    requesterEmail: MICHAEL, categoryName: "Hardware", relatedSystemName: "Printer",
+    summary: "Printer driver install failed", description: "The driver installer stops at 80% and rolls back.",
+    requestedPriority: "MEDIUM", itPriority: "MEDIUM", status: "RESOLVED", ownerEmail: EMMA, updatedDaysAgo: 2, resolvedDaysAgo: 2,
+    actions: [
+      { by: EMMA, assignee: EMMA, status: "COMPLETED", daysAgo: 3, description: "Cleared the stuck installer cache", result: "Installer runs to completion" },
+      { by: EMMA, assignee: EMMA, status: "COMPLETED", daysAgo: 2, description: "Installed the current driver and printed a test page", result: "Test page printed" },
+    ],
+  },
+  {
+    requesterEmail: MICHAEL, categoryName: "Account and Access", relatedSystemName: "LEB2 App",
+    summary: "Badge reader rejects my card", description: "The reader at the lab door shows a red light for my card.",
+    requestedPriority: "HIGH", itPriority: "HIGH", status: "CLOSED", ownerEmail: CARLOS, updatedDaysAgo: 10, resolvedDaysAgo: 12,
+    actions: [
+      { by: CARLOS, assignee: CARLOS, status: "COMPLETED", daysAgo: 12, description: "Re-enrolled the card at the access panel", result: "Card accepted by the reader" },
+    ],
+  },
+  {
+    requesterEmail: MICHAEL, categoryName: "Software", relatedSystemName: "Email",
+    summary: "Shared drive not mapping after reboot", description: "The team share disappears after every reboot and has to be mapped again.",
+    requestedPriority: "MEDIUM", itPriority: "HIGH", status: "OPEN", ownerEmail: PRIYA, updatedDaysAgo: 3,
+    actions: [
+      { by: PRIYA, assignee: CARLOS, status: "PLANNED", daysAgo: -1, description: "Check the logon script that maps the share" },
+    ],
+  },
+  {
+    requesterEmail: JENNIFER, categoryName: "Hardware", relatedSystemName: "Corporate Laptop",
+    summary: "Conference room display flickers", description: "The display in room 4B flickers a few minutes into every meeting.",
+    requestedPriority: "MEDIUM", itPriority: "MEDIUM", status: "REOPENED", ownerEmail: PRIYA, updatedDaysAgo: 1,
+    actions: [
+      { by: PRIYA, assignee: PRIYA, status: "COMPLETED", daysAgo: 8, description: "Replaced the HDMI cable", result: "Flicker stopped during a 30 minute test" },
+    ],
+  },
+  {
+    requesterEmail: JENNIFER, categoryName: "Account and Access", relatedSystemName: "Email",
+    summary: "Duplicate charge on software license", description: "The renewal for a design tool was charged twice this month.",
+    requestedPriority: "LOW", itPriority: "LOW", status: "CANCELLED", updatedDaysAgo: 5,
+    actions: [],
+  },
+  {
+    requesterEmail: JENNIFER, categoryName: "Account and Access", relatedSystemName: "VPN",
+    summary: "VPN token is not arriving", description: "The authenticator code never reaches my phone when I sign in to the VPN.",
+    requestedPriority: "URGENT", itPriority: "URGENT", status: "NEW", updatedDaysAgo: 0,
+    actions: [],
+  },
+  {
+    requesterEmail: JENNIFER, categoryName: "Hardware", relatedSystemName: "Corporate Laptop",
+    summary: "Laptop fan is very loud", description: "The fan runs at full speed even when the laptop is idle.",
+    requestedPriority: "MEDIUM", itPriority: "MEDIUM", status: "OPEN", ownerEmail: OLIVIA, updatedDaysAgo: 4,
+    actions: [],
+  },
+  {
+    requesterEmail: JENNIFER, categoryName: "Software", relatedSystemName: "LEB2 App",
+    summary: "Slow login on the shared lab PC", description: "Signing in on the shared lab PC takes more than two minutes.",
+    requestedPriority: "HIGH", itPriority: "URGENT", status: "IN_PROGRESS", ownerEmail: PRIYA, updatedDaysAgo: 0, resolutionIndicated: true,
+    actions: [
+      { by: PRIYA, assignee: PRIYA, status: "COMPLETED", daysAgo: 1, description: "Cleaned up stale roaming profiles", result: "Login time dropped to 40 seconds" },
+      { by: PRIYA, assignee: EMMA, status: "COMPLETED", daysAgo: 0, description: "Re-tested login on three lab PCs", result: "All three under 30 seconds" },
+    ],
+  },
+];
+
+const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000);
+
+export async function seedDemoWorkflow(prisma: PrismaClient) {
+  const users = await prisma.user.findMany();
+  const userByEmail = new Map(users.map((u) => [u.email, u]));
+  const category = new Map((await prisma.category.findMany()).map((c) => [c.name, c]));
+  const system = new Map((await prisma.relatedSystem.findMany()).map((s) => [s.name, s]));
+
+  let createdTickets = 0;
+  let createdActions = 0;
+  for (const demo of DEMO_WORK_TICKETS) {
+    const requester = userByEmail.get(demo.requesterEmail);
+    const cat = category.get(demo.categoryName);
+    const sys = system.get(demo.relatedSystemName);
+    if (!requester || !cat || !sys) continue;
+
+    const exists = await prisma.ticket.findFirst({ where: { requesterId: requester.id, summary: demo.summary }, select: { id: true } });
+    if (exists) continue;
+
+    await prisma.$transaction(async (tx) => {
+      const ticket = await tx.ticket.create({
+        data: {
+          ticketNumber: await nextTicketNumber(tx),
+          summary: demo.summary,
+          description: demo.description,
+          requestedPriority: demo.requestedPriority,
+          itPriority: demo.itPriority,
+          status: demo.status,
+          resolutionIndicated: demo.resolutionIndicated ?? false,
+          resolvedAt: demo.resolvedDaysAgo !== undefined ? daysAgo(demo.resolvedDaysAgo) : null,
+          updatedAt: daysAgo(demo.updatedDaysAgo),
+          requesterId: requester.id,
+          ownerId: demo.ownerEmail ? userByEmail.get(demo.ownerEmail)?.id : null,
+          categoryId: cat.id,
+          relatedSystemId: sys.id,
+        },
+      });
+      for (const action of demo.actions) {
+        const creator = userByEmail.get(action.by);
+        const assignee = userByEmail.get(action.assignee);
+        if (!creator || !assignee) continue;
+        await tx.actionTaken.create({
+          data: {
+            ticketId: ticket.id,
+            createdById: creator.id,
+            assigneeId: assignee.id,
+            performedById: action.status === "COMPLETED" ? assignee.id : null,
+            status: action.status,
+            actionDateTime: daysAgo(action.daysAgo),
+            description: action.description,
+            result: action.result ?? null,
+            followUpRequired: action.followUpNote !== undefined,
+            followUpNote: action.followUpNote ?? null,
+            attachmentNotes: action.attachmentNotes ?? null,
+          },
+        });
+        createdActions++;
+      }
+    });
+    createdTickets++;
+  }
+  console.log(`Seeded ${createdTickets} workflow demo ticket(s) with ${createdActions} action(s) (existing ones left untouched).`);
+}
+
 export async function seedDemoTickets(prisma: PrismaClient) {
+  await seedDemoBaseTickets(prisma);
+  await seedDemoWorkflow(prisma);
+}
+
+async function seedDemoBaseTickets(prisma: PrismaClient) {
   const existing = await prisma.ticket.count();
   if (existing > 0) {
-    console.log(`Skipped demo tickets: ${existing} ticket(s) already exist.`);
+    console.log(`Skipped base demo tickets: ${existing} ticket(s) already exist.`);
     return;
   }
 
@@ -159,6 +352,7 @@ export async function seedDemoTickets(prisma: PrismaClient) {
           summary: demo.summary,
           description: demo.description,
           requestedPriority: demo.requestedPriority,
+          itPriority: demo.requestedPriority, // BR-34: IT Priority starts as the requested one
           requesterId: requester.id,
           categoryId: category.id,
           relatedSystemId: relatedSystem.id,

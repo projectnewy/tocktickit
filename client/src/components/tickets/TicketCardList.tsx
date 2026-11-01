@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import type { TicketSummary } from "../../api/tickets.js";
 import { StatusBadge } from "../ui/StatusBadge.js";
 import { PriorityBadge } from "../ui/PriorityBadge.js";
+import { activatableProps } from "../ui/activatable.js";
 
 // Mobile-only (<992px) representation of the ticket list — a card list
 // instead of a horizontally-scrolling table.
@@ -13,13 +14,9 @@ export function TicketCardList({ tickets }: { tickets: TicketSummary[] }) {
       {tickets.map((t) => (
         <div
           key={t.id}
-          className="tk-surface p-3"
+          className="tk-surface p-3 tk-clickable-row"
           role="button"
-          tabIndex={0}
-          onClick={() => navigate(`/tickets/${t.id}`)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") navigate(`/tickets/${t.id}`);
-          }}
+          {...activatableProps(() => navigate(`/tickets/${t.id}`))}
         >
           <div className="d-flex justify-content-between align-items-start mb-1">
             <span className="fw-semibold">{t.ticketNumber}</span>

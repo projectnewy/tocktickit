@@ -11,6 +11,19 @@ export class ApiError extends Error {
   }
 }
 
+// BR-33: a 401 from any feature call means the session ended. The auth provider registers a handler that clears
+// the signed-in user (the route guard then returns to Login with a message). /api/auth/* calls are excluded: a
+// wrong password or wrong current password is also a 401, and must show its own message instead.
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  unauthorizedHandler = handler;
+}
+
+function notifyIfSessionEnded(path: string, status: number) {
+  if (status === 401 && !path.startsWith("/api/auth/")) unauthorizedHandler?.();
+}
+
 interface RequestOptions {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: unknown;
@@ -50,6 +63,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     }
     const message =
       (parsed as { error?: string } | undefined)?.error ?? `Request failed with status ${res.status}`;
+    notifyIfSessionEnded(path, res.status);
     throw new ApiError(res.status, message, parsed);
   }
 
@@ -73,6 +87,7 @@ export async function requestBlob(path: string): Promise<Blob> {
     }
     const message =
       (parsed as { error?: string } | undefined)?.error ?? `Request failed with status ${res.status}`;
+    notifyIfSessionEnded(path, res.status);
     throw new ApiError(res.status, message, parsed);
   }
 

@@ -12,6 +12,7 @@ export function useStaffTicketListParams() {
 
   const query: StaffTicketListQuery = useMemo(() => {
     const status = searchParams.getAll("status");
+    const itPriority = searchParams.getAll("itPriority");
     const ownerIdRaw = searchParams.get("ownerId");
     let ownerId: StaffTicketListQuery["ownerId"];
     if (ownerIdRaw === "me" || ownerIdRaw === "unassigned") ownerId = ownerIdRaw;
@@ -23,6 +24,7 @@ export function useStaffTicketListParams() {
       q: searchParams.get("q") || undefined,
       categoryId: searchParams.get("categoryId") ? Number(searchParams.get("categoryId")) : undefined,
       status: status.length ? status : undefined,
+      itPriority: itPriority.length ? itPriority : undefined,
       ownerId,
       sort: searchParams.get("sort") || DEFAULT_SORT,
     };
@@ -46,6 +48,10 @@ export function useStaffTicketListParams() {
       if ("status" in patch) {
         next.delete("status");
         for (const s of patch.status ?? []) next.append("status", s);
+      }
+      if ("itPriority" in patch) {
+        next.delete("itPriority");
+        for (const p of patch.itPriority ?? []) next.append("itPriority", p);
       }
 
       if (!("page" in patch)) next.set("page", "1");

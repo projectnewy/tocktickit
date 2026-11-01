@@ -6,6 +6,7 @@ import ticketsRouter from "./tickets.routes.js";
 import attachmentsRouter from "./attachments.routes.js";
 import staffRouter from "./staff.routes.js";
 import adminRouter from "./admin.routes.js";
+import dashboardRouter from "./dashboard.routes.js";
 
 const router = Router();
 router.use(healthRouter);
@@ -20,5 +21,6 @@ router.use("/tickets", ticketsRouter);
 router.use("/attachments", attachmentsRouter);
 router.use("/staff", staffRouter);
 router.use("/admin", adminRouter);
+router.use("/dashboard", dashboardRouter);
 
 export default router;

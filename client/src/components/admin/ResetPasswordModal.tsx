@@ -3,6 +3,8 @@ import type { AdminUser } from "../../api/admin.js";
 import { resetPassword } from "../../api/admin.js";
 import { ApiError } from "../../api/client.js";
 import { Alert } from "../ui/Alert.js";
+import { FormField } from "../ui/FormField.js";
+import { Modal } from "../ui/Modal.js";
 
 interface ResetPasswordModalProps {
   user: AdminUser;
@@ -16,10 +18,21 @@ export function ResetPasswordModal({ user, onCancel, onDone }: ResetPasswordModa
   const [newPassword, setNewPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [fieldError, setFieldError] = useState("");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
+    if (!newPassword) {
+      setFieldError("New password is required.");
+      return;
+    }
+    if (newPassword.length < 8 || newPassword.length > 72) {
+      setFieldError("Password must be 8–72 characters.");
+      return;
+    }
+    setFieldError("");
+
     setSubmitting(true);
     try {
       const updated = await resetPassword(user.id, newPassword);
@@ -32,49 +45,39 @@ export function ResetPasswordModal({ user, onCancel, onDone }: ResetPasswordModa
   }
 
   return (
-    <>
-      <div className="modal d-block" role="dialog" aria-modal="true" aria-labelledby="reset-password-title" tabIndex={-1}>
-        <div className="modal-dialog modal-sm">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2 className="modal-title h5" id="reset-password-title">
-                Set new password for {user.fullName}
-              </h2>
-              <button type="button" className="btn-close" aria-label="Close" onClick={onCancel} />
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                {error && <Alert variant="error">{error}</Alert>}
+    <Modal title={`Set new password for ${user.fullName}`} onClose={onCancel} size="sm" closeDisabled={submitting}>
+      <form onSubmit={handleSubmit} noValidate>
+        <div className="modal-body">
+          {error && <Alert variant="error">{error}</Alert>}
 
-                <label htmlFor="reset-new-password" className="form-label fw-semibold">
-                  New Password <span className="text-danger">*</span>
-                </label>
-                <input
-                  id="reset-new-password"
-                  type="password"
-                  className="form-control"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  maxLength={72}
-                  disabled={submitting}
-                />
-                <p className="tk-help mb-0">8–72 characters. The user must change it at next login.</p>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-outline-secondary" onClick={onCancel} disabled={submitting}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={submitting}>
-                  {submitting ? "Saving…" : "Set Password"}
-                </button>
-              </div>
-            </form>
-          </div>
+          <FormField
+            id="reset-new-password"
+            label="New Password"
+            required
+            error={fieldError}
+            help="8–72 characters. The user must change it at next login."
+          >
+            <input
+              id="reset-new-password"
+              type="password"
+              className="form-control"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              maxLength={72}
+              autoComplete="new-password"
+              disabled={submitting}
+            />
+          </FormField>
         </div>
-      </div>
-      <div className="modal-backdrop show" />
-    </>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-outline-secondary" onClick={onCancel} disabled={submitting}>
+            Cancel
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
+            {submitting ? "Saving…" : "Set Password"}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

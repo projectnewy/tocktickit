@@ -8,6 +8,7 @@ import {
   MAX_FILE_BYTES,
   PRIORITY_OPTIONS,
 } from "../../config.js";
+import { priorityLabel } from "../../config/labels.js";
 import { FormField } from "../ui/FormField.js";
 import { Alert } from "../ui/Alert.js";
 import { Spinner } from "../ui/Spinner.js";
@@ -142,7 +143,7 @@ export function TicketForm({ values, onChange, files, onFilesChange, fieldErrors
             <option value="">Select a priority…</option>
             {PRIORITY_OPTIONS.map((p) => (
               <option key={p} value={p}>
-                {p}
+                {priorityLabel(p)}
               </option>
             ))}
           </select>

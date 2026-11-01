@@ -24,7 +24,7 @@ export async function login(page: Page, email: string, password: string = SEED_P
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/password/i).fill(password);
   await page.getByRole("button", { name: /sign in/i }).click();
-  await expect(page.getByRole("heading", { name: /my tickets|change your password/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^dashboard$|change your password/i })).toBeVisible();
 }
 
 export async function logout(page: Page) {

@@ -21,6 +21,10 @@ const CREATED_TICKET: TicketDetail = {
   itPriority: null,
   status: "NEW",
   resolutionIndicated: false,
+
+  version: 0,
+
+  resolvedAt: null,
   ticketDate: "2026-01-01T00:00:00.000Z",
   requester: { id: 1, fullName: "Jennifer Anderson" },
   category: CATEGORIES[0],
